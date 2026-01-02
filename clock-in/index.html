@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clock In - Morph Sagrado Ventures Inc.</title>
+  
+  <!-- PWA Meta -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MSVI Clock In">
+  <meta name="theme-color" content="#0f5132">
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css" />
+  
+  <!-- Airtable Config -->
+  <script src="airtable-config.js"></script>
+</head>
+<body>
+  <div class="main-wrapper clock-in-page">
+    <header class="clock-header">
+      <div class="header-content">
+        <h1>⏰ Employee Clock In</h1>
+        <p class="header-subtitle">Time tracking for Morph Sagrado Ventures Inc.</p>
+      </div>
+    </header>
+    
+    <main class="container">
+      <!-- Live Clock Display -->
+      <div class="clock-display-card">
+        <div class="clock-time" id="mainClockDisplay">--:--:-- --</div>
+        <div class="clock-date" id="mainDateDisplay">Loading...</div>
+      </div>
+      
+      <!-- Clock Action Buttons -->
+      <div class="clock-buttons-grid">
+        <button class="clock-btn clock-btn-morning-in" id="btnMorningIn">
+          <span class="clock-btn-icon">🌅</span>
+          <span class="clock-btn-label">Morning Time In</span>
+        </button>
+        <button class="clock-btn clock-btn-morning-out" id="btnMorningOut">
+          <span class="clock-btn-icon">☀️</span>
+          <span class="clock-btn-label">Morning Time Out</span>
+        </button>
+        <button class="clock-btn clock-btn-afternoon-in" id="btnAfternoonIn">
+          <span class="clock-btn-icon">🌤️</span>
+          <span class="clock-btn-label">Afternoon Time In</span>
+        </button>
+        <button class="clock-btn clock-btn-afternoon-out" id="btnAfternoonOut">
+          <span class="clock-btn-icon">🌙</span>
+          <span class="clock-btn-label">Afternoon Time Out</span>
+        </button>
+      </div>
+      
+      <!-- Today's Attendance Section -->
+      <div class="today-section">
+        <div class="today-card">
+          <div class="today-card-header">
+            <div class="today-header-left">
+              <span class="today-icon">📋</span>
+              <div>
+                <h3>Today's Attendance</h3>
+                <span id="todayDateDisplay" class="today-date-badge"></span>
+              </div>
+            </div>
+            <div class="today-header-right">
+              <!-- Filter for Today's table -->
+              <div class="today-search-wrapper">
+                <span class="today-search-icon">🔍</span>
+                <input 
+                  type="text" 
+                  id="todaySearchInput" 
+                  class="today-search-input"
+                  placeholder="Search employee..."
+                  autocomplete="off"
+                />
+              </div>
+              <button class="btn-refresh" id="btnRefreshAttendance" onclick="window.loadTodayAttendance()">
+                <span>↻</span> Refresh
+              </button>
+            </div>
+          </div>
+          <div class="table-wrapper compact-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Morning In</th>
+                  <th>Morning Out</th>
+                  <th>Afternoon In</th>
+                  <th>Afternoon Out</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="todayAttendanceBody">
+                <tr>
+                  <td colspan="6" class="no-data">Loading attendance records...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+    
+    <!-- Clock In Modal -->
+    <div id="clockInModal" class="modal">
+      <div class="modal-content clock-modal">
+        <button class="modal-close" id="closeClockModal">×</button>
+        <h2 id="clockActionTitle" class="modal-title">Morning Time In</h2>
+        <p class="modal-subtitle">Current Time</p>
+        <div class="modal-clock-display" id="modalClockDisplay">--:--:--</div>
+        
+        <div class="employee-search-container">
+          <p class="search-prompt">Search employee name or scan barcode ID:</p>
+          <div class="modal-search-wrapper">
+            <input 
+              type="text" 
+              id="clockInEmployeeSearch" 
+              class="employee-search-input"
+              placeholder="Type name or scan ID..."
+              autocomplete="off"
+            />
+            <!-- Custom Suggestions Dropdown for Modal -->
+            <div id="clockInSuggestions" class="modal-suggestions-dropdown"></div>
+          </div>
+          <div id="selectedEmployeeDisplay" class="selected-employee-display"></div>
+          <p class="search-hint">💡 Press <strong>Enter</strong> to save attendance</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Search Results Modal -->
+    <div id="searchResultsModal" class="modal">
+      <div class="modal-content search-results-modal">
+        <button class="modal-close" id="closeSearchResultsModal">×</button>
+        
+        <!-- Employee Info Header -->
+        <div id="modalEmployeeInfo" class="modal-employee-info"></div>
+        
+        <!-- Date Filter -->
+        <div class="modal-date-filter-section" id="modalDateFilterSection">
+          <div class="date-presets">
+            <span class="preset-label">Quick View:</span>
+            <button class="preset-btn active" data-preset="this-month">This Month</button>
+            <button class="preset-btn" data-preset="last-month">Last Month</button>
+            <button class="preset-btn" data-preset="last-3-months">Last 3 Months</button>
+            <button class="preset-btn" data-preset="last-6-months">Last 6 Months</button>
+            <button class="preset-btn" data-preset="this-year">This Year</button>
+            <button class="preset-btn" data-preset="all-time">All Time</button>
+          </div>
+          
+          <div class="custom-date-range">
+            <span class="preset-label">Custom Range:</span>
+            <div class="date-inputs">
+              <div class="filter-group">
+                <label for="modalFromDate">From</label>
+                <input type="date" id="modalFromDate" />
+              </div>
+              <div class="filter-group">
+                <label for="modalToDate">To</label>
+                <input type="date" id="modalToDate" />
+              </div>
+              <button class="btn-secondary" id="btnModalApplyDateFilter">Apply</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Results Summary -->
+        <div class="modal-results-header">
+          <h4 id="modalResultsTitle">Attendance Records</h4>
+          <div class="results-summary" id="modalAttendanceSummary"></div>
+        </div>
+        
+        <!-- Attendance Table -->
+        <div class="modal-table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Morning In</th>
+                <th>Morning Out</th>
+                <th>Afternoon In</th>
+                <th>Afternoon Out</th>
+                <th>Total Hours</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="modalAttendanceBody">
+              <tr>
+                <td colspan="7" class="no-data">No records found</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Notification -->
+    <div id="clockNotification" class="notification"></div>
+  </div>
+  
+  <!-- JavaScript -->
+  <script src="clock-in-api.js"></script>
+  <script src="clock-in.js"></script>
+</body>
+</html>
