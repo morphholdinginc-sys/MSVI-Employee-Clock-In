@@ -85,6 +85,7 @@
    */
   function handleAttendanceSearchInput(e) {
     const searchValue = e.target.value.toLowerCase().trim();
+    const searchNormalized = normalizeEmployeeId(e.target.value.trim());
     const suggestionsContainer = document.getElementById('employeeSuggestions');
     
     if (!suggestionsContainer) return;
@@ -94,10 +95,11 @@
       return;
     }
     
-    // Filter employees matching the search
+    // Filter employees matching the search (includes normalized ID matching for barcode scanner)
     const matches = allEmployees.filter(emp => 
       emp.fullName.toLowerCase().includes(searchValue) ||
       emp.employeeId.toLowerCase().includes(searchValue) ||
+      normalizeEmployeeId(emp.employeeId).includes(searchNormalized) ||
       emp.firstName.toLowerCase().includes(searchValue) ||
       emp.lastName.toLowerCase().includes(searchValue) ||
       (emp.department && emp.department.toLowerCase().includes(searchValue))
@@ -193,6 +195,38 @@
     document.getElementById('btnMorningOut')?.addEventListener('click', () => showClockModal('TimeOutAM', 'Morning Time Out'));
     document.getElementById('btnAfternoonIn')?.addEventListener('click', () => showClockModal('TimeInPM', 'Afternoon Time In'));
     document.getElementById('btnAfternoonOut')?.addEventListener('click', () => showClockModal('TimeOutPM', 'Afternoon Time Out'));
+    
+    // Fullscreen attendance modal controls
+    document.getElementById('btnFullscreenAttendance')?.addEventListener('click', showFullscreenAttendance);
+    document.getElementById('closeFullscreenModal')?.addEventListener('click', closeFullscreenAttendance);
+    document.getElementById('btnCloseFullscreen')?.addEventListener('click', closeFullscreenAttendance);
+    document.getElementById('fullscreenAttendanceModal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'fullscreenAttendanceModal') closeFullscreenAttendance();
+    });
+    document.getElementById('btnRefreshFullscreen')?.addEventListener('click', refreshFullscreenAttendance);
+    document.getElementById('fullscreenSearchInput')?.addEventListener('input', (e) => {
+      renderFullscreenAttendance(e.target.value.trim());
+    });
+    
+    // Help modal controls
+    document.getElementById('btnShowHelp')?.addEventListener('click', showHelpModal);
+    document.getElementById('closeHelpModal')?.addEventListener('click', closeHelpModal);
+    document.getElementById('btnCloseHelpModal')?.addEventListener('click', closeHelpModal);
+    document.getElementById('helpModal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'helpModal') closeHelpModal();
+    });
+    
+    // Duplicate warning modal controls
+    document.getElementById('btnCloseDuplicateWarning')?.addEventListener('click', closeDuplicateWarningModal);
+    document.getElementById('duplicateWarningModal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'duplicateWarningModal') closeDuplicateWarningModal();
+    });
+    
+    // Success modal controls
+    document.getElementById('btnCloseSuccess')?.addEventListener('click', closeSuccessModal);
+    document.getElementById('successModal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'successModal') closeSuccessModal();
+    });
     
     // Modal controls
     document.getElementById('closeClockModal')?.addEventListener('click', closeClockModal);
@@ -427,6 +461,7 @@
   function showClockModal(actionType, actionLabel) {
     currentClockAction = actionType;
     selectedEmployee = null;
+    isSaving = false; // Reset saving flag
     
     const modal = document.getElementById('clockInModal');
     const actionTitle = document.getElementById('clockActionTitle');
@@ -471,6 +506,259 @@
   }
 
   /**
+   * Show the help/instructions modal
+   */
+  function showHelpModal() {
+    const modal = document.getElementById('helpModal');
+    if (modal) modal.style.display = 'flex';
+  }
+
+  /**
+   * Close the help/instructions modal
+   */
+  function closeHelpModal() {
+    const modal = document.getElementById('helpModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  /**
+   * Show the duplicate entry warning modal
+   */
+  function showDuplicateWarningModal(employeeName, actionLabel, recordedTime) {
+    const modal = document.getElementById('duplicateWarningModal');
+    const messageEl = document.getElementById('duplicateWarningMessage');
+    const employeeEl = document.getElementById('duplicateEmployeeName');
+    const actionEl = document.getElementById('duplicateActionType');
+    const timeEl = document.getElementById('duplicateRecordedTime');
+    
+    if (messageEl) messageEl.textContent = 'This employee has already clocked in for this time slot today.';
+    if (employeeEl) employeeEl.textContent = employeeName;
+    if (actionEl) actionEl.textContent = actionLabel;
+    if (timeEl) timeEl.textContent = recordedTime;
+    
+    if (modal) modal.style.display = 'flex';
+  }
+
+  /**
+   * Close the duplicate warning modal
+   */
+  function closeDuplicateWarningModal() {
+    const modal = document.getElementById('duplicateWarningModal');
+    if (modal) modal.style.display = 'none';
+    
+    // Focus back on the employee search input
+    const employeeInput = document.getElementById('clockInEmployeeSearch');
+    if (employeeInput) {
+      employeeInput.value = '';
+      setTimeout(() => employeeInput.focus(), 100);
+    }
+  }
+
+  /**
+   * Show the success modal
+   */
+  function showSuccessModal(employeeName, actionLabel, recordedTime) {
+    const modal = document.getElementById('successModal');
+    const messageEl = document.getElementById('successMessage');
+    const employeeEl = document.getElementById('successEmployeeName');
+    const actionEl = document.getElementById('successActionType');
+    const timeEl = document.getElementById('successRecordedTime');
+    
+    if (messageEl) messageEl.textContent = 'Attendance has been recorded successfully.';
+    if (employeeEl) employeeEl.textContent = employeeName;
+    if (actionEl) actionEl.textContent = actionLabel;
+    if (timeEl) timeEl.textContent = recordedTime;
+    
+    if (modal) modal.style.display = 'flex';
+  }
+
+  /**
+   * Close the success modal
+   */
+  function closeSuccessModal() {
+    const modal = document.getElementById('successModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  /**
+   * Show the fullscreen attendance modal
+   */
+  function showFullscreenAttendance() {
+    const modal = document.getElementById('fullscreenAttendanceModal');
+    if (modal) {
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+      
+      // Update date display
+      const dateDisplay = document.getElementById('fullscreenDateDisplay');
+      if (dateDisplay) {
+        const today = new Date();
+        dateDisplay.textContent = today.toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+      }
+      
+      // Clear search input
+      const searchInput = document.getElementById('fullscreenSearchInput');
+      if (searchInput) searchInput.value = '';
+      
+      // Render the fullscreen table
+      renderFullscreenAttendance();
+    }
+  }
+
+  /**
+   * Close the fullscreen attendance modal
+   */
+  function closeFullscreenAttendance() {
+    const modal = document.getElementById('fullscreenAttendanceModal');
+    if (modal) {
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+  }
+
+  /**
+   * Render fullscreen attendance table
+   */
+  function renderFullscreenAttendance(filterText = '') {
+    const tbody = document.getElementById('fullscreenAttendanceBody');
+    const countDisplay = document.getElementById('fullscreenRecordCount');
+    if (!tbody) return;
+    
+    // Filter attendance based on search text
+    let filteredAttendance = todayAttendance;
+    if (filterText) {
+      const searchLower = filterText.toLowerCase();
+      filteredAttendance = todayAttendance.filter(record => {
+        const fields = record.fields;
+        const employee = allEmployees.find(e => e.employeeId === fields.EmployeeId);
+        const employeeName = employee ? employee.fullName.toLowerCase() : '';
+        const employeeId = (fields.EmployeeId || '').toLowerCase();
+        return employeeName.includes(searchLower) || employeeId.includes(searchLower);
+      });
+    }
+    
+    // Sort by earliest clock-in time
+    filteredAttendance.sort((a, b) => {
+      const aFields = a.fields;
+      const bFields = b.fields;
+      const aTime = aFields.TimeInAM ? parseTimeToMinutes(aFields.TimeInAM) : parseTimeToMinutes(aFields.TimeInPM);
+      const bTime = bFields.TimeInAM ? parseTimeToMinutes(bFields.TimeInAM) : parseTimeToMinutes(bFields.TimeInPM);
+      return aTime - bTime;
+    });
+    
+    // Update count
+    if (countDisplay) {
+      countDisplay.textContent = `${filteredAttendance.length} record${filteredAttendance.length !== 1 ? 's' : ''}`;
+    }
+    
+    if (filteredAttendance.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" class="no-data">${filterText ? 'No matching employees found.' : 'No attendance records for today yet.'}</td>
+        </tr>
+      `;
+      return;
+    }
+    
+    tbody.innerHTML = filteredAttendance.map(record => {
+      const fields = record.fields;
+      const employee = allEmployees.find(e => e.employeeId === fields.EmployeeId);
+      const employeeName = employee ? employee.fullName : fields.EmployeeId;
+      
+      return `
+        <tr class="clickable-row" data-employee-id="${fields.EmployeeId}" data-employee-name="${employeeName}" title="Click to view attendance history">
+          <td>
+            <div class="employee-cell">
+              <span class="employee-name">${employeeName}</span>
+              <span class="employee-id">${fields.EmployeeId || ''}</span>
+            </div>
+          </td>
+          <td>${formatTime12Hour(fields.TimeInAM)}</td>
+          <td>${formatTime12Hour(fields.TimeOutAM)}</td>
+          <td>${formatTime12Hour(fields.TimeInPM)}</td>
+          <td>${formatTime12Hour(fields.TimeOutPM)}</td>
+          <td>${getAttendanceStatusBadge(fields, employee)}</td>
+        </tr>
+      `;
+    }).join('');
+    
+    // Add click handlers to fullscreen table rows
+    tbody.querySelectorAll('.clickable-row').forEach(row => {
+      row.addEventListener('click', () => {
+        const employeeId = row.dataset.employeeId;
+        const employeeName = row.dataset.employeeName;
+        // Show employee history on top of fullscreen modal (don't close it)
+        viewEmployeeHistory(employeeId, employeeName);
+      });
+    });
+  }
+
+  /**
+   * Refresh fullscreen attendance with loading state
+   */
+  async function refreshFullscreenAttendance() {
+    const refreshBtn = document.getElementById('btnRefreshFullscreen');
+    const tbody = document.getElementById('fullscreenAttendanceBody');
+    const searchInput = document.getElementById('fullscreenSearchInput');
+    
+    // Store original button content
+    const originalContent = refreshBtn ? refreshBtn.innerHTML : '';
+    
+    try {
+      // Show loading state on button
+      if (refreshBtn) {
+        refreshBtn.innerHTML = '<span class="spinning">↻</span> Refreshing...';
+        refreshBtn.disabled = true;
+      }
+      
+      // Show loading in table
+      if (tbody) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="no-data loading-state">
+              <div class="loading-spinner">↻</div>
+              <div>Refreshing attendance records...</div>
+            </td>
+          </tr>
+        `;
+      }
+      
+      // Reload data
+      await loadTodayAttendance();
+      
+      // Re-render with current search filter
+      const filterText = searchInput ? searchInput.value.trim() : '';
+      renderFullscreenAttendance(filterText);
+      
+      // Show success notification
+      showNotification('Attendance refreshed successfully!', 'success');
+      
+    } catch (error) {
+      console.error('[Clock In] Error refreshing fullscreen attendance:', error);
+      showNotification('Failed to refresh attendance.', 'error');
+      
+      if (tbody) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="no-data">Failed to load records. Please try again.</td>
+          </tr>
+        `;
+      }
+    } finally {
+      // Restore button state
+      if (refreshBtn) {
+        refreshBtn.innerHTML = originalContent;
+        refreshBtn.disabled = false;
+      }
+    }
+  }
+
+  /**
    * Clear the clock modal fields without closing
    */
   function clearClockModalFields() {
@@ -497,6 +785,7 @@
    */
   function handleClockInSearch(e) {
     const searchValue = e.target.value.toLowerCase().trim();
+    const searchNormalized = normalizeEmployeeId(e.target.value.trim());
     const suggestionsContainer = document.getElementById('clockInSuggestions');
     
     if (!suggestionsContainer) return;
@@ -508,10 +797,11 @@
       return;
     }
     
-    // Filter employees matching the search
+    // Filter employees matching the search (includes normalized ID matching for barcode scanner)
     const matches = allEmployees.filter(emp => 
       emp.fullName.toLowerCase().includes(searchValue) ||
       emp.employeeId.toLowerCase().includes(searchValue) ||
+      normalizeEmployeeId(emp.employeeId).includes(searchNormalized) ||
       emp.firstName.toLowerCase().includes(searchValue) ||
       emp.lastName.toLowerCase().includes(searchValue) ||
       (emp.department && emp.department.toLowerCase().includes(searchValue))
@@ -567,7 +857,17 @@
   }
 
   /**
+   * Normalize Employee ID for matching (removes hyphens, spaces, and converts to lowercase)
+   * This allows barcode scanner IDs to match even with different formatting
+   */
+  function normalizeEmployeeId(id) {
+    if (!id) return '';
+    return id.toLowerCase().replace(/[-\s]/g, '');
+  }
+
+  /**
    * Handle Enter key in clock modal
+   * Optimized for barcode scanner - auto-saves when employee ID is scanned
    */
   function handleClockInKeydown(e) {
     if (e.key === 'Escape') {
@@ -592,16 +892,24 @@
       
       const searchValue = e.target.value.trim();
       const searchLower = searchValue.toLowerCase();
+      const searchNormalized = normalizeEmployeeId(searchValue);
       
       if (!searchValue) {
         showNotification('Please enter an employee name or ID.', 'error');
         return;
       }
       
-      // Find matching employee - prioritize exact Employee ID match
+      // Find matching employee - prioritize exact Employee ID match (normalized for barcode scanner)
       let match = allEmployees.find(emp => 
-        emp.employeeId.toLowerCase() === searchLower
+        normalizeEmployeeId(emp.employeeId) === searchNormalized
       );
+      
+      // If no normalized ID match, try exact ID match
+      if (!match) {
+        match = allEmployees.find(emp => 
+          emp.employeeId.toLowerCase() === searchLower
+        );
+      }
       
       // If no exact ID match, try name match
       if (!match) {
@@ -615,7 +923,8 @@
         selectedEmployee = match;
         e.target.value = match.fullName;
         updateSelectedEmployeeDisplay();
-        console.log('[Clock In] Employee matched, saving for:', match.fullName);
+        console.log('[Clock In] Employee matched via barcode/search, auto-saving for:', match.fullName);
+        // Auto-save immediately after finding match (perfect for barcode scanner workflow)
         saveClockRecord();
       } else {
         showNotification(`Employee not found: ${searchValue}`, 'error');
@@ -690,7 +999,7 @@
     });
     const dateValue = now.toISOString().split('T')[0];
     
-    // Prevent multiple saves
+    // Prevent multiple saves (double protection with cooldown)
     if (isSaving) {
       console.log('[Clock In] Already saving, ignoring duplicate request');
       return;
@@ -708,19 +1017,31 @@
       const existingRecord = await window.ClockInAPI.findTodayRecord(employeeId, dateValue);
       
       if (existingRecord) {
-        // Update existing record
+        // Check if this specific time slot already has a value
+        const existingTime = existingRecord.fields[actionType];
+        
+        if (existingTime) {
+          // Already clocked for this time slot - show warning modal
+          showDuplicateWarningModal(employeeName, getActionLabel(actionType), existingTime);
+          clearClockModalFields();
+          isSaving = false;
+          return;
+        }
+        
+        // Update existing record with new time slot
         await window.ClockInAPI.updateAttendanceRecord(existingRecord.id, actionType, timeValue);
       } else {
         // Create new record
         await window.ClockInAPI.createAttendanceRecord(employeeId, dateValue, actionType, timeValue);
       }
       
-      showNotification(`${employeeName} - ${getActionLabel(actionType)} recorded at ${timeValue}`, 'success');
+      // Show success modal
+      showSuccessModal(employeeName, getActionLabel(actionType), timeValue);
       
       // Refresh today's attendance
       await loadTodayAttendance();
       
-      // Close modal
+      // Close clock-in modal
       closeClockModal();
       
     } catch (error) {
@@ -785,6 +1106,28 @@
   }
 
   /**
+   * Parse time string to comparable value (minutes since midnight)
+   */
+  function parseTimeToMinutes(timeStr) {
+    if (!timeStr) return Infinity; // No time = sort to end
+    
+    // Handle formats like "08:00 AM", "8:00 AM", "08:00", etc.
+    const cleanTime = timeStr.trim().toUpperCase();
+    const match = cleanTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    
+    if (!match) return Infinity;
+    
+    let hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    const period = match[3];
+    
+    if (period === 'PM' && hours !== 12) hours += 12;
+    if (period === 'AM' && hours === 12) hours = 0;
+    
+    return hours * 60 + minutes;
+  }
+
+  /**
    * Render today's attendance table
    */
   function renderTodayAttendance(filterText = '') {
@@ -803,6 +1146,18 @@
         return employeeName.includes(searchLower) || employeeId.includes(searchLower);
       });
     }
+    
+    // Sort by earliest clock-in time (Morning In first, then Afternoon In)
+    filteredAttendance.sort((a, b) => {
+      const aFields = a.fields;
+      const bFields = b.fields;
+      
+      // Get earliest time for each record (Morning In takes priority)
+      const aTime = aFields.TimeInAM ? parseTimeToMinutes(aFields.TimeInAM) : parseTimeToMinutes(aFields.TimeInPM);
+      const bTime = bFields.TimeInAM ? parseTimeToMinutes(bFields.TimeInAM) : parseTimeToMinutes(bFields.TimeInPM);
+      
+      return aTime - bTime;
+    });
     
     if (filteredAttendance.length === 0) {
       tbody.innerHTML = `
@@ -884,6 +1239,9 @@
       modal.classList.add('show');
       document.body.style.overflow = 'hidden';
     }
+
+    // Set default date range (this month)
+    setDefaultDateRange();
 
     // Load and display the attendance records
     await loadEmployeeAttendanceModal();
@@ -1180,14 +1538,12 @@
 
   /**
    * Get attendance status badge HTML
-   * Status logic matches attendance.js:
-   * - Absent: No AM and no PM
-   * - Invalid: Less than 30 minutes worked
-   * - Short Hours: Some work but less than half day threshold
-   * - Half Day: Only AM or PM with enough hours
-   * - Overtime: More than standard hours
-   * - Present/Complete: Full day with standard hours
-   * - In Progress: Today's record still being worked
+   * Simplified status logic:
+   * - Working: Currently logged in (has time in, no time out for current period)
+   * - On Break: Morning out done, afternoon not started
+   * - Present: Has completed all time entries for the day
+   * - Half Day: Only morning OR only afternoon completed
+   * - Incomplete: Missing some entries (past records)
    */
   function getAttendanceStatusBadge(record, employee = null) {
     const fields = record.fields || record;
@@ -1198,23 +1554,10 @@
     const timeInPM = fields.TimeInPM || fields.timeInPM;
     const timeOutPM = fields.TimeOutPM || fields.timeOutPM;
     
-    const hasAM = timeInAM && timeOutAM;
-    const hasPM = timeInPM && timeOutPM;
-    
     // Check if record is from today
     const recordDate = fields.Date || fields.date;
     const today = new Date().toISOString().split('T')[0];
     const isToday = recordDate === today;
-    
-    // Get total hours worked
-    const totalHours = Number(fields.TotalHoursWorked || fields.totalHoursWorked) || 0;
-    
-    // Get employee's standard work hours (use employee data or default to 40)
-    const standardWorkweekHours = Number(employee?.standardWorkweekHours) || 40;
-    const dailyStd = standardWorkweekHours / 7;
-    const tol = 0.01;
-    const minHoursForHalfDay = dailyStd / 2 * 0.75; // At least 75% of half day
-    const minHoursForValid = 0.5; // 30 minutes
     
     // Check leave type
     const leaveType = fields.LeaveType || fields.leaveType || '';
@@ -1222,40 +1565,62 @@
       return '<span class="status-badge status-leave">On Leave</span>';
     }
     
-    // Absent: No AM and no PM time entries
-    if (!hasAM && !hasPM) {
-      // If today and has any time in (but no time out yet), it's in progress
-      if (isToday && (timeInAM || timeInPM)) {
-        return '<span class="status-badge status-in-progress">In Progress</span>';
+    // For TODAY's records - show real-time status
+    if (isToday) {
+      // All 4 time slots filled = Complete/Present
+      if (timeInAM && timeOutAM && timeInPM && timeOutPM) {
+        return '<span class="status-badge status-complete">Present</span>';
       }
-      return '<span class="status-badge status-absent">Absent</span>';
-    }
-    
-    // Only AM or PM completed (Half Day scenario)
-    if ((hasAM && !hasPM) || (!hasAM && hasPM)) {
-      // If today and might still clock in for other half
-      if (isToday) {
+      
+      // Currently working afternoon (logged in PM, not yet out)
+      if (timeInPM && !timeOutPM) {
+        return '<span class="status-badge status-working">Working</span>';
+      }
+      
+      // At lunch (morning done, afternoon not started)
+      if (timeInAM && timeOutAM && !timeInPM) {
+        return '<span class="status-badge status-lunch">At Lunch</span>';
+      }
+      
+      // Currently working morning (logged in AM, not yet out)
+      if (timeInAM && !timeOutAM) {
+        return '<span class="status-badge status-working">Working</span>';
+      }
+      
+      // Only afternoon done (half day PM)
+      if (!timeInAM && !timeOutAM && timeInPM && timeOutPM) {
+        return '<span class="status-badge status-half-day">Half Day</span>';
+      }
+      
+      // Waiting to start (has some entry but unclear state)
+      if (timeInAM || timeInPM) {
         return '<span class="status-badge status-in-progress">In Progress</span>';
       }
       
-      // Past day - check hours worked
-      if (totalHours < minHoursForValid) {
-        return '<span class="status-badge status-invalid">Invalid</span>';
-      } else if (totalHours < minHoursForHalfDay) {
-        return '<span class="status-badge status-short-hours">Short Hours</span>';
-      } else {
-        return '<span class="status-badge status-half-day">Half Day</span>';
-      }
+      return '<span class="status-badge status-absent">No Record</span>';
     }
     
-    // Both AM and PM completed - check total hours
-    if (totalHours < (dailyStd - tol)) {
-      return '<span class="status-badge status-short-hours">Short Hours</span>';
-    } else if (totalHours > (dailyStd + tol)) {
-      return '<span class="status-badge status-overtime">Overtime</span>';
-    } else {
+    // For PAST records
+    const hasAM = timeInAM && timeOutAM;
+    const hasPM = timeInPM && timeOutPM;
+    
+    // Both halves complete
+    if (hasAM && hasPM) {
       return '<span class="status-badge status-complete">Present</span>';
     }
+    
+    // Only one half complete
+    if (hasAM || hasPM) {
+      return '<span class="status-badge status-half-day">Half Day</span>';
+    }
+    
+    // Has some entries but incomplete
+    if (timeInAM || timeOutAM || timeInPM || timeOutPM) {
+      return '<span class="status-badge status-incomplete">Incomplete</span>';
+    }
+    
+    // No entries at all
+    return '<span class="status-badge status-absent">Absent</span>';
   }
 
   /**

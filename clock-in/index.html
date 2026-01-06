@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -21,7 +21,12 @@
   <div class="main-wrapper clock-in-page">
     <header class="clock-header">
       <div class="header-content">
-        <h1>⏰ Employee Clock In</h1>
+        <div class="header-title-row">
+          <h1>&#x23F0; Employee Clock In</h1>
+          <button class="help-btn" id="btnShowHelp" title="How to use">
+            <span>&#x2753;</span> How to Use
+          </button>
+        </div>
         <p class="header-subtitle">Time tracking for Morph Sagrado Ventures Inc.</p>
       </div>
     </header>
@@ -35,21 +40,25 @@
       
       <!-- Clock Action Buttons -->
       <div class="clock-buttons-grid">
-        <button class="clock-btn clock-btn-morning-in" id="btnMorningIn">
-          <span class="clock-btn-icon">🌅</span>
-          <span class="clock-btn-label">Morning Time In</span>
+        <button class="clock-btn clock-btn-in" id="btnMorningIn">
+          <div class="clock-btn-badge">MORNING</div>
+          <span class="clock-btn-label">LOG IN</span>
+          <span class="clock-btn-time">Good Morning!</span>
         </button>
-        <button class="clock-btn clock-btn-morning-out" id="btnMorningOut">
-          <span class="clock-btn-icon">☀️</span>
-          <span class="clock-btn-label">Morning Time Out</span>
+        <button class="clock-btn clock-btn-out" id="btnMorningOut">
+          <div class="clock-btn-badge">MORNING</div>
+          <span class="clock-btn-label">LOG OUT</span>
+          <span class="clock-btn-time">Enjoy Your Lunch!</span>
         </button>
-        <button class="clock-btn clock-btn-afternoon-in" id="btnAfternoonIn">
-          <span class="clock-btn-icon">🌤️</span>
-          <span class="clock-btn-label">Afternoon Time In</span>
+        <button class="clock-btn clock-btn-in" id="btnAfternoonIn">
+          <div class="clock-btn-badge">AFTERNOON</div>
+          <span class="clock-btn-label">LOG IN</span>
+          <span class="clock-btn-time">Welcome Back!</span>
         </button>
-        <button class="clock-btn clock-btn-afternoon-out" id="btnAfternoonOut">
-          <span class="clock-btn-icon">🌙</span>
-          <span class="clock-btn-label">Afternoon Time Out</span>
+        <button class="clock-btn clock-btn-out" id="btnAfternoonOut">
+          <div class="clock-btn-badge">AFTERNOON</div>
+          <span class="clock-btn-label">LOG OUT</span>
+          <span class="clock-btn-time">See You Tomorrow!</span>
         </button>
       </div>
       
@@ -58,7 +67,7 @@
         <div class="today-card">
           <div class="today-card-header">
             <div class="today-header-left">
-              <span class="today-icon">📋</span>
+              <span class="today-icon">&#x1F4CB;</span>
               <div>
                 <h3>Today's Attendance</h3>
                 <span id="todayDateDisplay" class="today-date-badge"></span>
@@ -67,7 +76,7 @@
             <div class="today-header-right">
               <!-- Filter for Today's table -->
               <div class="today-search-wrapper">
-                <span class="today-search-icon">🔍</span>
+                <span class="today-search-icon">&#x1F50D;</span>
                 <input 
                   type="text" 
                   id="todaySearchInput" 
@@ -77,7 +86,10 @@
                 />
               </div>
               <button class="btn-refresh" id="btnRefreshAttendance" onclick="window.loadTodayAttendance()">
-                <span>↻</span> Refresh
+                <span>&#x21BB;</span> Refresh
+              </button>
+              <button class="btn-fullscreen" id="btnFullscreenAttendance" title="View Fullscreen">
+                <span>&#x26F6;</span>
               </button>
             </div>
           </div>
@@ -107,7 +119,7 @@
     <!-- Clock In Modal -->
     <div id="clockInModal" class="modal">
       <div class="modal-content clock-modal">
-        <button class="modal-close" id="closeClockModal">×</button>
+        <button class="modal-close" id="closeClockModal">&times;</button>
         <h2 id="clockActionTitle" class="modal-title">Morning Time In</h2>
         <p class="modal-subtitle">Current Time</p>
         <div class="modal-clock-display" id="modalClockDisplay">--:--:--</div>
@@ -126,7 +138,7 @@
             <div id="clockInSuggestions" class="modal-suggestions-dropdown"></div>
           </div>
           <div id="selectedEmployeeDisplay" class="selected-employee-display"></div>
-          <p class="search-hint">💡 Press <strong>Enter</strong> to save attendance</p>
+          <p class="search-hint">&#x1F4A1; Press <strong>Enter</strong> to save attendance</p>
         </div>
       </div>
     </div>
@@ -134,7 +146,7 @@
     <!-- Search Results Modal -->
     <div id="searchResultsModal" class="modal">
       <div class="modal-content search-results-modal">
-        <button class="modal-close" id="closeSearchResultsModal">×</button>
+        <button class="modal-close" id="closeSearchResultsModal">&times;</button>
         
         <!-- Employee Info Header -->
         <div id="modalEmployeeInfo" class="modal-employee-info"></div>
@@ -199,6 +211,211 @@
     
     <!-- Notification -->
     <div id="clockNotification" class="notification"></div>
+    
+    <!-- Fullscreen Attendance Modal -->
+    <div id="fullscreenAttendanceModal" class="modal fullscreen-modal" style="display: none;">
+      <div class="modal-content fullscreen-modal-content">
+        <div class="modal-header fullscreen-header">
+          <div class="fullscreen-title-section">
+            <span class="fullscreen-icon">&#x1F4CB;</span>
+            <div>
+              <h2>Today's Attendance</h2>
+              <span id="fullscreenDateDisplay" class="fullscreen-date-badge"></span>
+            </div>
+          </div>
+          <div class="fullscreen-controls">
+            <div class="fullscreen-search-wrapper">
+              <span class="fullscreen-search-icon">&#x1F50D;</span>
+              <input 
+                type="text" 
+                id="fullscreenSearchInput" 
+                class="fullscreen-search-input"
+                placeholder="Search employee..."
+                autocomplete="off"
+              />
+            </div>
+            <button class="btn-refresh-fullscreen" id="btnRefreshFullscreen">
+              <span>&#x21BB;</span> Refresh
+            </button>
+            <button class="fullscreen-close" id="closeFullscreenModal" title="Close">&times;</button>
+          </div>
+        </div>
+        <div class="fullscreen-table-wrapper">
+          <table class="fullscreen-table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Morning In</th>
+                <th>Morning Out</th>
+                <th>Afternoon In</th>
+                <th>Afternoon Out</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="fullscreenAttendanceBody">
+              <tr>
+                <td colspan="6" class="no-data">Loading attendance records...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="fullscreen-footer">
+          <span class="fullscreen-count" id="fullscreenRecordCount">0 records</span>
+          <button class="btn-primary" id="btnCloseFullscreen">Close</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Help/Instructions Modal -->
+    <div id="helpModal" class="modal" style="display: none;">
+      <div class="modal-content help-modal-content">
+        <div class="modal-header">
+          <h2>&#x1F4D6; How to Use Clock In System</h2>
+          <button class="modal-close" id="closeHelpModal">&times;</button>
+        </div>
+        <div class="modal-body help-modal-body">
+          
+          <!-- Scanner Method -->
+          <div class="help-section">
+            <div class="help-section-header">
+              <span class="help-icon">&#x1F4F1;</span>
+              <h3>Using Barcode Scanner (Recommended)</h3>
+            </div>
+            <div class="help-steps">
+              <div class="help-step">
+                <span class="step-number">1</span>
+                <div class="step-content">
+                  <strong>Select Time Action</strong>
+                  <p>Click one of the clock buttons: Morning Time In, Morning Time Out, Afternoon Time In, or Afternoon Time Out</p>
+                </div>
+              </div>
+              <div class="help-step">
+                <span class="step-number">2</span>
+                <div class="step-content">
+                  <strong>Scan Employee Barcode</strong>
+                  <p>Point the scanner at the employee's ID barcode. The scanner will automatically input the Employee ID.</p>
+                </div>
+              </div>
+              <div class="help-step">
+                <span class="step-number">3</span>
+                <div class="step-content">
+                  <strong>Automatic Save</strong>
+                  <p>The system will automatically find the employee and save the attendance record. You'll see a success notification.</p>
+                </div>
+              </div>
+            </div>
+            <div class="help-tip success">
+              <span>&#x1F4A1;</span> <strong>Tip:</strong> The scanner sends an Enter key automatically, so the record saves instantly after scanning!
+            </div>
+          </div>
+          
+          <!-- Manual Method -->
+          <div class="help-section">
+            <div class="help-section-header">
+              <span class="help-icon">&#x2328;</span>
+              <h3>Manual Entry (Keyboard)</h3>
+            </div>
+            <div class="help-steps">
+              <div class="help-step">
+                <span class="step-number">1</span>
+                <div class="step-content">
+                  <strong>Select Time Action</strong>
+                  <p>Click one of the clock buttons (Morning In, Morning Out, etc.)</p>
+                </div>
+              </div>
+              <div class="help-step">
+                <span class="step-number">2</span>
+                <div class="step-content">
+                  <strong>Type Employee ID or Name</strong>
+                  <p>Enter the Employee ID (e.g., "EMP-001") or start typing the employee's name. Suggestions will appear as you type.</p>
+                </div>
+              </div>
+              <div class="help-step">
+                <span class="step-number">3</span>
+                <div class="step-content">
+                  <strong>Select &amp; Save</strong>
+                  <p>Click on a suggestion to select the employee, or press <kbd>Enter</kbd> to auto-match and save.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Important Notes -->
+          <div class="help-section">
+            <div class="help-section-header">
+              <span class="help-icon">&#x26A0;</span>
+              <h3>Important Notes</h3>
+            </div>
+            <div class="help-notes">
+              <div class="help-note warning">
+                <span>&#x1F512;</span>
+                <p><strong>Duplicate Prevention:</strong> If an employee already has a record for a specific time slot (e.g., Morning Time In), the system will show a warning and prevent duplicate entries.</p>
+              </div>
+              <div class="help-note info">
+                <span>&#x1F194;</span>
+                <p><strong>ID Matching:</strong> Employee IDs with or without hyphens will match correctly (e.g., "EMP-001" and "EMP001" both work).</p>
+              </div>
+              <div class="help-note info">
+                <span>&#x1F4CB;</span>
+                <p><strong>View Records:</strong> Check "Today's Attendance" table below to see all clock-in records for today.</p>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+        <div class="modal-footer">
+          <button class="btn-primary" id="btnCloseHelpModal">Got it!</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Duplicate Entry Warning Modal -->
+    <div id="duplicateWarningModal" class="modal" style="display: none;">
+      <div class="modal-content duplicate-warning-modal">
+        <div class="duplicate-warning-icon">&#x26A0;</div>
+        <h2 class="duplicate-warning-title">Already Recorded</h2>
+        <p id="duplicateWarningMessage" class="duplicate-warning-message"></p>
+        <div class="duplicate-warning-details">
+          <div class="duplicate-detail-row">
+            <span class="detail-label">Employee:</span>
+            <span id="duplicateEmployeeName" class="detail-value"></span>
+          </div>
+          <div class="duplicate-detail-row">
+            <span class="detail-label">Action:</span>
+            <span id="duplicateActionType" class="detail-value"></span>
+          </div>
+          <div class="duplicate-detail-row">
+            <span class="detail-label">Recorded Time:</span>
+            <span id="duplicateRecordedTime" class="detail-value"></span>
+          </div>
+        </div>
+        <button class="btn-primary" id="btnCloseDuplicateWarning">OK, Got it</button>
+      </div>
+    </div>
+    
+    <!-- Success Modal -->
+    <div id="successModal" class="modal" style="display: none;">
+      <div class="modal-content success-modal">
+        <div class="success-icon">&#x2714;</div>
+        <h2 class="success-title">Success!</h2>
+        <p id="successMessage" class="success-message"></p>
+        <div class="success-details">
+          <div class="success-detail-row">
+            <span class="detail-label">Employee:</span>
+            <span id="successEmployeeName" class="detail-value"></span>
+          </div>
+          <div class="success-detail-row">
+            <span class="detail-label">Action:</span>
+            <span id="successActionType" class="detail-value"></span>
+          </div>
+          <div class="success-detail-row">
+            <span class="detail-label">Time:</span>
+            <span id="successRecordedTime" class="detail-value"></span>
+          </div>
+        </div>
+        <button class="btn-primary" id="btnCloseSuccess">OK</button>
+      </div>
+    </div>
   </div>
   
   <!-- JavaScript -->
@@ -206,3 +423,4 @@
   <script src="clock-in.js"></script>
 </body>
 </html>
+

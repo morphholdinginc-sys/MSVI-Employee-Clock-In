@@ -1,3 +1,29 @@
+// Helper function to parse coreWorkingHours and get schedule span in hours
+// Format: "8:00 AM - 6:00 PM" returns 10 (hours span)
+function getScheduleSpanHours(coreWorkingHours) {
+  if (!coreWorkingHours || coreWorkingHours === 'N/A') return null;
+  
+  const parseTo24hr = (timeStr) => {
+    const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+    if (!match) return null;
+    let [, hours, minutes, period] = match;
+    let h = parseInt(hours, 10);
+    if (period.toUpperCase() === 'PM' && h !== 12) h += 12;
+    if (period.toUpperCase() === 'AM' && h === 12) h = 0;
+    return h * 60 + parseInt(minutes, 10); // Return total minutes
+  };
+  
+  const parts = coreWorkingHours.split('-').map(s => s.trim());
+  if (parts.length !== 2) return null;
+  
+  const startMinutes = parseTo24hr(parts[0]);
+  const endMinutes = parseTo24hr(parts[1]);
+  
+  if (startMinutes === null || endMinutes === null) return null;
+  
+  return (endMinutes - startMinutes) / 60; // Return hours
+}
+
 // Show/Hide Add Attendance Modal (align with overlay markup)
 window.showAddAttendanceModal = async function() {
   const modal = document.getElementById('addAttendanceModal');
@@ -28,9 +54,8 @@ window.showAddAttendanceModal = async function() {
   
   // Ensure submit handler is attached even if DOMContentLoaded already fired
   const addForm = document.getElementById('addAttendanceForm');
-  if (addForm && !addForm.__handlerBound) {
-    addForm.addEventListener('submit', handleAddAttendanceSubmit);
-    addForm.__handlerBound = true;
+  if (addForm) {
+    addForm.onsubmit = handleAddAttendanceSubmit;
   }
   modal.style.display = 'block';
 };
@@ -289,10 +314,12 @@ async function handleBatchAddSubmit(event) {
   
   const employee = employeesMap.get(employeeId);
   const standardWorkweekHours = employee?.standardWorkweekHours || 40;
-  const dailyStandardHours = standardWorkweekHours / 7;
+  // Determine if Fixed rate type
   const rateType = (employee?.rateType || '').toLowerCase();
   const empType = (employee?.employmentType || employee?.type || '').toLowerCase();
   const isFixed = rateType.includes('fixed') || rateType.includes('monthly') || rateType.includes('salary') || empType.includes('fixed');
+  // Daily standard hours = Standard Workweek Hours / 7 days
+  const dailyStandardHours = standardWorkweekHours / 7;
   
   let successCount = 0;
   let errorCount = 0;
@@ -330,13 +357,26 @@ async function handleBatchAddSubmit(event) {
         const [outH, outM] = timeOutPM.split(':').map(Number);
         totalMinutes += (outH * 60 + outM) - (inH * 60 + inM);
       }
-      // Add 1 hour lunch break if both AM and PM are present
-      if (timeInAM && timeOutAM && timeInPM && timeOutPM) {
+      
+      const hasAM = !!(timeInAM && timeOutAM);
+      const hasPM = !!(timeInPM && timeOutPM);
+      
+      // Calculate actual work hours first
+      let actualWorkHours = totalMinutes / 60;
+      
+      // Get schedule span from coreWorkingHours (e.g., "8:00 AM - 6:00 PM" = 10 hours)
+      const scheduleSpan = getScheduleSpanHours(employee?.coreWorkingHours);
+      
+      // Add 1-hour lunch break only if:
+      // 1. Both AM and PM shifts are worked
+      // 2. Schedule span exists and is >= daily standard (indicates lunch may be included in span)
+      // 3. Actual work hours < daily standard hours (need to add lunch to reach standard)
+      if (hasAM && hasPM && scheduleSpan && scheduleSpan >= dailyStandardHours && actualWorkHours < dailyStandardHours) {
         totalMinutes += 60;
       }
       
-      const totalHoursWorked = totalMinutes / 60;
-      const overtimeHours = Math.max(0, totalHoursWorked - dailyStandardHours);
+      let totalHoursWorked = totalMinutes / 60;
+      const overtimeHours = isFixed ? 0 : Math.max(0, totalHoursWorked - dailyStandardHours);
       
       let overTimePay = 0;
       if (!isFixed && overtimeHours > 0) {
@@ -348,8 +388,6 @@ async function handleBatchAddSubmit(event) {
       // Fixed rate employees cannot have double pay
       const isDoublePay = isFixed ? false : (doublePaySunday && isSunday);
       
-      const hasAM = !!(timeInAM && timeOutAM);
-      const hasPM = !!(timeInPM && timeOutPM);
       const isAbsent = !hasAM && !hasPM;
       const isHalfDay = (hasAM && !hasPM) || (!hasAM && hasPM);
       
@@ -566,6 +604,7 @@ function calculateHourlyRate(emp) {
   const base = Number(emp?.baseSalary) || 0;
   if (!base) return 0;
   const standard = Number(emp?.standardWorkweekHours) || 40;
+  // Daily standard hours = Standard Workweek Hours / 7 days
   const daily = standard / 7;
   const dailyRate = base / 30;
   return dailyRate / daily;
@@ -583,10 +622,14 @@ function calculateMonthlySummary(records, emp) {
   // Ensure records is an array
   const safeRecords = Array.isArray(records) ? records : [];
   const standard = Number(emp?.standardWorkweekHours) || 40;
+  // Determine if Fixed rate type
+  const rateType = (emp?.rateType || '').toLowerCase();
+  const empType = (emp?.employmentType || emp?.type || '').toLowerCase();
+  const isFixed = rateType.includes('fixed') || rateType.includes('monthly') || rateType.includes('salary') || empType.includes('fixed');
+  // Daily standard hours = Standard Workweek Hours / 7 days
   const dailyStd = standard / 7;
   const tol = 0.01;
   const sum = { totalDays: safeRecords.length, presentDays:0, absentDays:0, overtimeDays:0, shortHoursDays:0, totalHours:0, totalOvertime:0, totalOvertimePay:0, dailyStandardHours: dailyStd, fullDays:0, leaveUsed:0, invalidDays:0 };
-  const isFixed = String(emp?.rateType).toLowerCase() === 'fixed';
   safeRecords.forEach(r => {
     const total = Number(r.totalHoursWorked)||0;
     const ot = Number(r.overtimeHours)||0;
@@ -668,6 +711,9 @@ async function initializeDepartmentFilter() {
   }
 }
 
+// Initialization flag to prevent duplicate event listeners
+let attendanceInitialized = false;
+
 // Initialize function
 async function initAttendance() {
   console.log('[Attendance] Initializing...');
@@ -677,9 +723,19 @@ async function initAttendance() {
   if (document.getElementById('attendanceEmployeeTableBody')) {
     await loadEmployeesForAttendance();
   }
-  // Setup form listeners
-  document.getElementById('editAttendanceForm')?.addEventListener('submit', handleEditAttendanceSubmit);
-  document.getElementById('addAttendanceForm')?.addEventListener('submit', handleAddAttendanceSubmit);
+  
+  // Only attach event listeners once
+  if (!attendanceInitialized) {
+    // Setup form listeners using onsubmit to prevent duplicates
+    const editForm = document.getElementById('editAttendanceForm');
+    const addForm = document.getElementById('addAttendanceForm');
+    if (editForm) editForm.onsubmit = handleEditAttendanceSubmit;
+    if (addForm) addForm.onsubmit = handleAddAttendanceSubmit;
+    
+    attendanceInitialized = true;
+    console.log('[Attendance] Event listeners attached');
+  }
+  
   await updateTodaySummaryBar();
 }
 
@@ -1099,25 +1155,38 @@ async function handleAddAttendanceSubmit(event) {
     const [outHour, outMinute] = timeOutPM.split(':').map(Number);
     totalMinutes += (outHour * 60 + outMinute) - (inHour * 60 + inMinute);
   }
-  // Always add 1 hour lunch break if both AM and PM are present
-  if (timeInAM && timeOutAM && timeInPM && timeOutPM) {
-    totalMinutes += 60;
-  }
   // Determine status
   const hasAM = !!(timeInAM && timeOutAM);
   const hasPM = !!(timeInPM && timeOutPM);
-  const isAbsent = !hasAM && !hasPM || (remarks.toLowerCase().includes('absent'));
-  const isHalfDay = (hasAM && !hasPM) || (!hasAM && hasPM) || (!isAbsent && totalMinutes < 240);
-  const totalHoursWorked = totalMinutes / 60;
+  
   const employee = employeesMap.get(employeeId);
   const standardWorkweekHours = employee?.standardWorkweekHours || 40;
   const dailyStandardHours = standardWorkweekHours / 7;
-  const overtimeHours = Math.max(0, totalHoursWorked - dailyStandardHours);
-  // Calculate overtime pay for time-based employees
-  let overTimePay = 0;
+  
+  // Calculate actual work hours first
+  let actualWorkHours = totalMinutes / 60;
+  
+  // Get schedule span from coreWorkingHours (e.g., "8:00 AM - 6:00 PM" = 10 hours)
+  const scheduleSpan = getScheduleSpanHours(employee?.coreWorkingHours);
+  
+  // Add 1-hour lunch break only if:
+  // 1. Both AM and PM shifts are worked
+  // 2. Schedule span exists and is greater than daily standard (indicates lunch is included in span)
+  // 3. Actual work hours < daily standard hours (need to add lunch to reach standard)
+  if (hasAM && hasPM && scheduleSpan && scheduleSpan > dailyStandardHours && actualWorkHours < dailyStandardHours) {
+    totalMinutes += 60;
+  }
+  
+  const isAbsent = !hasAM && !hasPM || (remarks.toLowerCase().includes('absent'));
+  const isHalfDay = (hasAM && !hasPM) || (!hasAM && hasPM) || (!isAbsent && totalMinutes < 240);
+  let totalHoursWorked = totalMinutes / 60;
+  // Determine if Fixed rate type
   const rateType = (employee?.rateType || '').toLowerCase();
   const empType = (employee?.employmentType || employee?.type || '').toLowerCase();
   const isFixed = rateType.includes('fixed') || rateType.includes('monthly') || rateType.includes('salary') || empType.includes('fixed');
+  const overtimeHours = isFixed ? 0 : Math.max(0, totalHoursWorked - dailyStandardHours);
+  // Calculate overtime pay for time-based employees
+  let overTimePay = 0;
   if (!isFixed && overtimeHours > 0) {
     const hourlyRate = calculateHourlyRate(employee);
     overTimePay = overtimeHours * hourlyRate * 1.25;
@@ -1253,25 +1322,38 @@ async function handleEditAttendanceSubmit(event) {
     const [outHour, outMinute] = timeOutPM.split(':').map(Number);
     totalMinutes += (outHour * 60 + outMinute) - (inHour * 60 + inMinute);
   }
-  // Always add 1 hour lunch break if both AM and PM are present
-  if (timeInAM && timeOutAM && timeInPM && timeOutPM) {
-    totalMinutes += 60;
-  }
   // Determine status
   const hasAM = !!(timeInAM && timeOutAM);
   const hasPM = !!(timeInPM && timeOutPM);
-  const isAbsent = !hasAM && !hasPM || (remarks.toLowerCase().includes('absent'));
-  const isHalfDay = (hasAM && !hasPM) || (!hasAM && hasPM) || (!isAbsent && totalMinutes < 240);
-  const totalHoursWorked = totalMinutes / 60;
+  
   const employee = employeesMap.get(employeeId);
   const standardWorkweekHours = employee?.standardWorkweekHours || 40;
   const dailyStandardHours = standardWorkweekHours / 7;
-  const overtimeHours = Math.max(0, totalHoursWorked - dailyStandardHours);
-  // Calculate overtime pay for time-based employees
-  let overTimePay = 0;
+  
+  // Calculate actual work hours first
+  let actualWorkHours = totalMinutes / 60;
+  
+  // Get schedule span from coreWorkingHours (e.g., "8:00 AM - 6:00 PM" = 10 hours)
+  const scheduleSpan = getScheduleSpanHours(employee?.coreWorkingHours);
+  
+  // Add 1-hour lunch break only if:
+  // 1. Both AM and PM shifts are worked
+  // 2. Schedule span exists and is >= daily standard (indicates lunch may be included in span)
+  // 3. Actual work hours < daily standard hours (need to add lunch to reach standard)
+  if (hasAM && hasPM && scheduleSpan && scheduleSpan >= dailyStandardHours && actualWorkHours < dailyStandardHours) {
+    totalMinutes += 60;
+  }
+  
+  const isAbsent = !hasAM && !hasPM || (remarks.toLowerCase().includes('absent'));
+  const isHalfDay = (hasAM && !hasPM) || (!hasAM && hasPM) || (!isAbsent && totalMinutes < 240);
+  let totalHoursWorked = totalMinutes / 60;
+  // Determine if Fixed rate type
   const rateType = (employee?.rateType || '').toLowerCase();
   const empType = (employee?.employmentType || employee?.type || '').toLowerCase();
   const isFixed = rateType.includes('fixed') || rateType.includes('monthly') || rateType.includes('salary') || empType.includes('fixed');
+  const overtimeHours = isFixed ? 0 : Math.max(0, totalHoursWorked - dailyStandardHours);
+  // Calculate overtime pay for time-based employees
+  let overTimePay = 0;
   if (!isFixed && overtimeHours > 0) {
     const hourlyRate = calculateHourlyRate(employee);
     overTimePay = overtimeHours * hourlyRate * 1.25;
@@ -1531,6 +1613,7 @@ function renderAttendanceModal(records, employeeName, employee) {
     const total = Number(r.totalHoursWorked) || 0;
     const emp = employee || employeesMap.get(currentEmployeeId);
     const standard = Number(emp?.standardWorkweekHours) || 40;
+    // Daily standard hours = Standard Workweek Hours / 7 days
     const daily = standard / 7;
     const tol = 0.01;
     
@@ -2103,20 +2186,39 @@ function calculateAddAttendanceSummary() {
     const [outHour, outMinute] = timeOutPM.split(':').map(Number);
     totalMinutes += (outHour * 60 + outMinute) - (inHour * 60 + inMinute);
   }
-  // Always add 1 hour lunch break if both AM and PM are present
-  if (timeInAM && timeOutAM && timeInPM && timeOutPM) {
-    totalMinutes += 60;
-  }
-  const totalHoursWorked = totalMinutes / 60;
+  
+  const hasAM = !!(timeInAM && timeOutAM);
+  const hasPM = !!(timeInPM && timeOutPM);
+  
   // Use current employee for rate
   const employee = employeesMap.get(currentEmployeeId);
   const standardWorkweekHours = employee?.standardWorkweekHours || 40;
   const dailyStandardHours = standardWorkweekHours / 7;
-  const overtimeHours = Math.max(0, totalHoursWorked - dailyStandardHours);
+  
+  // Calculate actual work hours first
+  let actualWorkHours = totalMinutes / 60;
+  
+  // Get schedule span from coreWorkingHours (e.g., "8:00 AM - 6:00 PM" = 10 hours)
+  const scheduleSpan = getScheduleSpanHours(employee?.coreWorkingHours);
+  
+  // Add 1-hour lunch break only if:
+  // 1. Both AM and PM shifts are worked
+  // 2. Schedule span exists and is >= daily standard (indicates lunch may be included in span)
+  // 3. Actual work hours < daily standard hours (need to add lunch to reach standard)
+  if (hasAM && hasPM && scheduleSpan && scheduleSpan >= dailyStandardHours && actualWorkHours < dailyStandardHours) {
+    totalMinutes += 60;
+  }
+  
+  let totalHoursWorked = totalMinutes / 60;
+  // Determine if Fixed rate type
+  const rateType = (employee?.rateType || '').toLowerCase();
+  const empType = (employee?.employmentType || employee?.type || '').toLowerCase();
+  const isFixed = rateType.includes('fixed') || rateType.includes('monthly') || rateType.includes('salary') || empType.includes('fixed');
+  const overtimeHours = isFixed ? 0 : Math.max(0, totalHoursWorked - dailyStandardHours);
   const baseSalary = employee?.baseSalary || 0;
-  const hourlyRate = baseSalary ? (baseSalary / 30) / dailyStandardHours : 0;
+  const hourlyRate = (baseSalary && dailyStandardHours > 0) ? (baseSalary / 30) / dailyStandardHours : 0;
   const overtimeRate = hourlyRate * 1.25;
-  const overTimePay = overtimeHours > 0 ? overtimeHours * overtimeRate : 0;
+  const overTimePay = (!isFixed && overtimeHours > 0) ? overtimeHours * overtimeRate : 0;
   document.getElementById('addTotalHours').textContent = formatHoursMinutes(totalHoursWorked);
   document.getElementById('addOvertimeHours').textContent = formatHoursMinutes(overtimeHours);
   document.getElementById('addOvertimePay').textContent = overTimePay > 0 ? `₱${overTimePay.toFixed(2)}` : '-';
