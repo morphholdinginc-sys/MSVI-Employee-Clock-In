@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Clock In - Morph Sagrado Ventures Inc.</title>
   
   <!-- PWA Meta -->
@@ -10,6 +10,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="MSVI Clock In">
   <meta name="theme-color" content="#0f5132">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
   
   <!-- Stylesheet -->
   <link rel="stylesheet" href="styles.css" />
@@ -41,25 +43,49 @@
       <!-- Clock Action Buttons -->
       <div class="clock-buttons-grid">
         <button class="clock-btn clock-btn-in" id="btnMorningIn">
-          <div class="clock-btn-badge">MORNING</div>
-          <span class="clock-btn-label">LOG IN</span>
-          <span class="clock-btn-time">Good Morning!</span>
+          <span class="clock-btn-emoji">🌅</span>
+          <span class="clock-btn-label">MORNING</span>
+          <span class="clock-btn-sublabel">TIME IN</span>
         </button>
         <button class="clock-btn clock-btn-out" id="btnMorningOut">
-          <div class="clock-btn-badge">MORNING</div>
-          <span class="clock-btn-label">LOG OUT</span>
-          <span class="clock-btn-time">Enjoy Your Lunch!</span>
+          <span class="clock-btn-emoji">🍽️</span>
+          <span class="clock-btn-label">MORNING</span>
+          <span class="clock-btn-sublabel">TIME OUT</span>
         </button>
         <button class="clock-btn clock-btn-in" id="btnAfternoonIn">
-          <div class="clock-btn-badge">AFTERNOON</div>
-          <span class="clock-btn-label">LOG IN</span>
-          <span class="clock-btn-time">Welcome Back!</span>
+          <span class="clock-btn-emoji">☀️</span>
+          <span class="clock-btn-label">AFTERNOON</span>
+          <span class="clock-btn-sublabel">TIME IN</span>
         </button>
         <button class="clock-btn clock-btn-out" id="btnAfternoonOut">
-          <div class="clock-btn-badge">AFTERNOON</div>
-          <span class="clock-btn-label">LOG OUT</span>
-          <span class="clock-btn-time">See You Tomorrow!</span>
+          <span class="clock-btn-emoji">🌙</span>
+          <span class="clock-btn-label">AFTERNOON</span>
+          <span class="clock-btn-sublabel">TIME OUT</span>
         </button>
+      </div>
+      
+      <!-- Mobile Search Section (visible only on mobile) -->
+      <div class="mobile-search-section">
+        <div class="mobile-search-card">
+          <div class="mobile-search-header">
+            <span class="mobile-search-icon">&#x1F50D;</span>
+            <h3>Search Attendance</h3>
+          </div>
+          <div class="mobile-search-input-wrapper">
+            <input 
+              type="text" 
+              id="mobileSearchInput" 
+              class="mobile-search-input"
+              placeholder="Enter employee name..."
+              autocomplete="off"
+            />
+            <button class="mobile-search-btn" id="btnMobileSearch">
+              Search
+            </button>
+            <!-- Mobile Suggestions Dropdown - positioned inside wrapper -->
+            <div id="mobileSuggestions" class="mobile-suggestions-dropdown"></div>
+          </div>
+        </div>
       </div>
       
       <!-- Today's Attendance Section -->
@@ -138,7 +164,12 @@
             <div id="clockInSuggestions" class="modal-suggestions-dropdown"></div>
           </div>
           <div id="selectedEmployeeDisplay" class="selected-employee-display"></div>
-          <p class="search-hint">&#x1F4A1; Press <strong>Enter</strong> to save attendance</p>
+          
+          <!-- Save Button -->
+          <button class="clock-save-btn" id="btnSaveClockRecord">
+            <span class="save-btn-icon">&#x2714;</span>
+            Save Attendance
+          </button>
         </div>
       </div>
     </div>

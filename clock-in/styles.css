@@ -17,10 +17,37 @@ html, body {
   outline: none;
 }
 
+html {
+  /* Prevent font scaling on orientation change */
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   background: #020f08;
   color: #e6fff1;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* Smooth scrolling */
+  -webkit-overflow-scrolling: touch;
+  /* Prevent pull-to-refresh on mobile */
+  overscroll-behavior-y: contain;
+}
+
+/* Mobile touch improvements */
+button, 
+input, 
+select, 
+textarea {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Prevent text selection on buttons */
+button {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* ===========================
@@ -1743,7 +1770,8 @@ body {
   align-items: center;
 }
 
-.modal.show {
+.modal.show,
+.modal.active {
   display: flex;
 }
 
@@ -2040,14 +2068,44 @@ body {
   margin-left: 0.5rem;
 }
 
-.search-hint {
-  color: #6c8c7c;
-  font-size: 0.85rem;
-  margin-top: 1rem;
+/* Clock Save Button */
+.clock-save-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: 1.25rem;
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+  -webkit-tap-highlight-color: transparent;
 }
 
-.search-hint strong {
-  color: #66ffb2;
+.clock-save-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(40, 167, 69, 0.5);
+}
+
+.clock-save-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.clock-save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.save-btn-icon {
+  font-size: 1.3rem;
 }
 
 /* Modal Search Wrapper */
@@ -2212,39 +2270,388 @@ body {
 }
 
 /* ===========================
+   Mobile Search Section
+   =========================== */
+.mobile-search-section {
+  display: none; /* Hidden by default, shown on mobile */
+}
+
+.mobile-search-card {
+  background: linear-gradient(145deg, rgba(31, 66, 58, 0.95) 0%, rgba(13, 27, 14, 0.98) 100%);
+  border-radius: 16px;
+  padding: 1.25rem;
+  border: 1px solid rgba(102, 255, 178, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  position: relative; /* For absolute positioning of dropdown */
+}
+
+.mobile-search-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.mobile-search-header h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.mobile-search-icon {
+  font-size: 1.25rem;
+}
+
+.mobile-search-input-wrapper {
+  display: flex;
+  gap: 0.75rem;
+  position: relative;
+}
+
+.mobile-search-input {
+  flex: 1;
+  padding: 0.875rem 1rem;
+  font-size: 16px; /* Prevents zoom on iOS */
+  border: 2px solid rgba(102, 255, 178, 0.25);
+  border-radius: 12px;
+  background: rgba(13, 27, 14, 0.8);
+  color: #e6fff1;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.mobile-search-input:focus {
+  border-color: #28a745;
+  box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.15);
+}
+
+.mobile-search-input::placeholder {
+  color: #6c8c7c;
+}
+
+.mobile-search-btn {
+  padding: 0.875rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-search-btn:active {
+  transform: scale(0.95);
+  opacity: 0.9;
+}
+
+/* Mobile Suggestions Dropdown */
+.mobile-suggestions-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.5rem;
+  background: linear-gradient(180deg, #1a3d2e 0%, #0d1b0e 100%);
+  border: 2px solid #28a745;
+  border-radius: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+}
+
+.mobile-suggestions-dropdown.active {
+  display: block;
+}
+
+.mobile-suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid rgba(102, 255, 178, 0.1);
+}
+
+.mobile-suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.mobile-suggestion-item:hover,
+.mobile-suggestion-item.selected {
+  background: linear-gradient(90deg, rgba(40, 167, 69, 0.3) 0%, rgba(40, 167, 69, 0.1) 100%);
+}
+
+.mobile-suggestion-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  color: white;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.mobile-suggestion-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.mobile-suggestion-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mobile-suggestion-details {
+  font-size: 0.8rem;
+  color: #a0c8b5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mobile-no-suggestions {
+  padding: 1rem;
+  text-align: center;
+  color: #a0c8b5;
+  font-size: 0.9rem;
+}
+
+/* ===========================
    Responsive Styles
    =========================== */
+
+/* Tablet and smaller devices */
 @media (max-width: 768px) {
+  /* Make fullscreen on mobile */
+  .clock-in-page {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  
+  .clock-header {
+    padding: 0.5rem 1rem;
+  }
+  
+  .container {
+    padding: 1rem;
+  }
+  
+  /* Hide today's attendance section on mobile - use search instead */
+  .today-section {
+    display: none;
+  }
+  
+  /* Show mobile search on mobile */
+  .mobile-search-section {
+    display: block;
+    margin-top: 1rem;
+  }
+  
+  .clock-header h1 {
+    font-size: 1.5rem;
+    margin: 0;
+  }
+  
+  .header-subtitle {
+    font-size: 0.8rem;
+    margin: 0.15rem 0 0;
+  }
+  
+  .header-title-row {
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  
+  .help-btn {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.7rem;
+  }
+  
+  .clock-display-card {
+    padding: 1.25rem 1rem;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+  }
+  
   .clock-time {
     font-size: 3.5rem;
+    letter-spacing: 0.02em;
+  }
+  
+  .clock-date {
+    font-size: 1rem;
+    margin-top: 0.25rem;
   }
   
   .clock-buttons-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 1.25rem;
+    grid-template-rows: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 0;
+    /* Fixed aspect ratio instead of stretching */
+    aspect-ratio: 1.2 / 1;
+    max-height: 45vh;
   }
   
   .clock-btn {
-    padding: 1.5rem 1rem 1.75rem;
+    padding: 1rem 0.75rem;
+    border-radius: 16px;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 0.3rem;
+    /* Improve touch target */
+    -webkit-tap-highlight-color: transparent;
   }
   
   .clock-btn-icon {
+    font-size: 1.5rem;
+  }
+  
+  .clock-btn-emoji {
     font-size: 2.5rem;
+    line-height: 1;
+    margin-bottom: 0.25rem;
   }
   
   .clock-btn-label {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+  }
+  
+  .clock-btn-sublabel {
+    font-size: 1.4rem;
+    font-weight: 900;
+    letter-spacing: 1px;
+    margin-top: 0.1rem;
   }
   
   .clock-btn-time {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
+    opacity: 0.9;
+    display: none;
   }
   
   .clock-btn-badge {
-    font-size: 0.65rem;
-    padding: 0.2rem 0.6rem;
+    display: none;
   }
   
+  /* Mobile search card */
+  .mobile-search-card {
+    padding: 0.75rem;
+    border-radius: 10px;
+  }
+  
+  .mobile-search-header {
+    margin-bottom: 0.5rem;
+  }
+  
+  .mobile-search-header h3 {
+    font-size: 0.9rem;
+  }
+  
+  .mobile-search-icon {
+    font-size: 1rem;
+  }
+  
+  .mobile-search-input {
+    padding: 0.65rem 0.875rem;
+  }
+  
+  .mobile-search-btn {
+    padding: 0.65rem 1rem;
+    font-size: 0.9rem;
+  }
+  .mobile-search-btn {
+    padding: 0.75rem 1.25rem;
+  }
+  
+  /* Today's Attendance Section */
+  .today-card {
+    border-radius: 14px;
+  }
+  
+  .today-card-header {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+    align-items: stretch;
+  }
+  
+  .today-header-left {
+    justify-content: center;
+    text-align: center;
+  }
+  
+  .today-header-left h3 {
+    font-size: 1rem;
+  }
+  
+  .today-header-right {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+  
+  .today-search-wrapper {
+    width: 100%;
+    order: -1;
+  }
+  
+  .today-search-input {
+    width: 100%;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  .btn-refresh,
+  .btn-fullscreen {
+    flex: 1;
+    min-width: 100px;
+    justify-content: center;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.85rem;
+  }
+  
+  /* Table responsive */
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -0.5rem;
+    padding: 0 0.5rem;
+  }
+  
+  .table-wrapper table {
+    min-width: 600px;
+    font-size: 0.85rem;
+  }
+  
+  .table-wrapper th,
+  .table-wrapper td {
+    padding: 0.6rem 0.5rem;
+    white-space: nowrap;
+  }
+  
+  /* Search form */
   .search-form {
     flex-direction: column;
   }
@@ -2252,24 +2659,30 @@ body {
   .btn-primary {
     width: 100%;
     justify-content: center;
+    padding: 0.875rem 1rem;
+    font-size: 1rem;
   }
   
   .date-filter-grid {
     grid-template-columns: 1fr;
+    gap: 0.75rem;
   }
   
   .date-presets {
     justify-content: flex-start;
+    flex-wrap: wrap;
   }
   
   .preset-btn {
     font-size: 0.75rem;
-    padding: 0.35rem 0.6rem;
+    padding: 0.4rem 0.65rem;
+    /* Touch-friendly */
+    min-height: 36px;
   }
   
   .custom-date-range {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
   }
   
   .date-inputs {
@@ -2280,66 +2693,394 @@ body {
     flex: 1;
   }
   
+  .date-inputs .filter-group input[type="date"] {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 0.625rem;
+  }
+  
   .modal-clock-display {
-    font-size: 3rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .clock-header {
-    padding: 1.5rem 1rem;
+    font-size: 2.5rem;
   }
   
-  .clock-header h1 {
-    font-size: 2rem;
+  /* Tab navigation */
+  .tab-buttons {
+    flex-direction: column;
+    gap: 0.35rem;
   }
   
-  .header-subtitle {
-    font-size: 1.1rem;
+  .tab-btn {
+    padding: 0.875rem 1rem;
+    font-size: 0.95rem;
   }
   
-  .container {
+  /* Search nav bar */
+  .search-nav-bar {
+    flex-direction: column;
+    gap: 1rem;
     padding: 1rem;
   }
   
-  .card {
+  .search-nav-left,
+  .search-nav-center,
+  .search-nav-right {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  /* Suggestion dropdown */
+  .suggestions-dropdown {
+    max-height: 300px;
+  }
+  
+  .suggestion-item {
+    padding: 0.875rem 1rem;
+  }
+  
+  .suggestion-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+  
+  .suggestion-name {
+    font-size: 1rem;
+  }
+  
+  .suggestion-details {
+    font-size: 0.8rem;
+  }
+  
+  /* Modals */
+  .modal-content,
+  .success-modal,
+  .duplicate-warning-modal {
+    width: 95%;
+    max-width: 95%;
+    margin: 0.5rem;
     padding: 1.5rem;
   }
   
+  /* Search Results Modal - Mobile */
+  .search-results-modal {
+    width: 95%;
+    max-width: 95%;
+    max-height: 90vh;
+    padding: 1rem;
+    margin: 0.5rem;
+    border-radius: 16px;
+  }
+  
+  .modal-employee-info {
+    flex-direction: row;
+    text-align: left;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .modal-employee-avatar {
+    width: 50px;
+    height: 50px;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+  
+  .modal-employee-name {
+    font-size: 1.1rem;
+    margin-bottom: 0.15rem;
+  }
+  
+  .modal-employee-meta {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  /* Hide the date filter section on mobile - use This Month by default */
+  .modal-date-filter-section {
+    display: none;
+  }
+  
+  .modal-results-header {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+    margin-bottom: 0.75rem;
+  }
+  
+  .modal-results-header h4 {
+    font-size: 1rem;
+    margin: 0;
+  }
+  
+  .results-summary {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+  }
+  
+  .results-summary span {
+    padding: 0.2rem 0.5rem;
+  }
+  
+  .modal-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -0.5rem;
+    padding: 0 0.5rem;
+  }
+  
+  .modal-table-wrapper table {
+    min-width: 550px;
+    font-size: 0.7rem;
+  }
+  
+  .modal-table-wrapper th,
+  .modal-table-wrapper td {
+    padding: 0.4rem 0.3rem;
+    white-space: nowrap;
+  }
+  
+  /* Smaller status badges on mobile */
+  .modal-table-wrapper .status-badge,
+  .status-badge {
+    padding: 0.25rem 0.4rem;
+    font-size: 0.65rem;
+    border-radius: 4px;
+  }
+  
+  /* Make close button more visible on mobile */
+  .search-results-modal .modal-close {
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 36px;
+    height: 36px;
+    font-size: 1.5rem;
+    background: rgba(220, 53, 69, 0.9);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+}
+
+/* Small phones */
+@media (max-width: 480px) {
+  .clock-header {
+    padding: 0.875rem;
+  }
+  
+  .clock-header h1 {
+    font-size: 1.2rem;
+  }
+  
+  .header-subtitle {
+    font-size: 0.75rem;
+  }
+  
+  .container {
+    padding: 0.75rem;
+  }
+  
+  .card {
+    padding: 1rem;
+  }
+  
   .clock-display-card {
-    padding: 1.75rem;
+    padding: 1.25rem 0.75rem;
+    border-radius: 10px;
   }
   
   .clock-time {
-    font-size: 2.75rem;
+    font-size: 2.2rem;
   }
   
   .clock-date {
-    font-size: 1.3rem;
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
   }
   
   .clock-buttons-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
   }
   
   .clock-btn {
-    padding: 1.5rem 1rem 1.75rem;
+    padding: 1rem 0.5rem 1.25rem;
+    border-radius: 12px;
+    min-height: 90px;
+    border-width: 2px;
   }
   
   .clock-btn-icon {
-    font-size: 2.75rem;
+    font-size: 1.75rem;
   }
   
   .clock-btn-label {
-    font-size: 1.3rem;
+    font-size: 0.9rem;
+    letter-spacing: 0;
+  }
+  
+  .clock-btn-time {
+    font-size: 0.55rem;
+    display: none; /* Hide greeting text on very small screens */
+  }
+  
+  .clock-btn-badge {
+    font-size: 0.5rem;
+    padding: 0.1rem 0.4rem;
+    top: -6px;
+  }
+  
+  /* Today's card compact */
+  .today-card-header {
+    padding: 0.875rem;
+    gap: 0.75rem;
+  }
+  
+  .today-icon {
+    font-size: 1.25rem;
+  }
+  
+  .today-header-left h3 {
+    font-size: 0.9rem;
+  }
+  
+  .today-date-badge {
+    font-size: 0.75rem !important;
+  }
+  
+  .btn-refresh,
+  .btn-fullscreen {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.75rem;
+  }
+  
+  .btn-refresh span,
+  .btn-fullscreen span {
+    font-size: 0.9rem;
+  }
+  
+  /* Table even more compact */
+  .table-wrapper table {
+    min-width: 500px;
+    font-size: 0.75rem;
+  }
+  
+  .table-wrapper th,
+  .table-wrapper td {
+    padding: 0.5rem 0.35rem;
   }
   
   .search-attendance-card h3 {
-    font-size: 1.4rem;
+    font-size: 1.2rem;
   }
   
   .search-description {
+    font-size: 0.95rem;
+  }
+  
+  /* Modals for small screens */
+  .modal-content,
+  .success-modal,
+  .duplicate-warning-modal {
+    padding: 1.25rem;
+    border-radius: 16px;
+  }
+  
+  .success-title,
+  .duplicate-warning-title {
+    font-size: 1.4rem;
+  }
+  
+  .success-icon,
+  .duplicate-warning-icon {
+    font-size: 3rem;
+  }
+  
+  .success-message,
+  .duplicate-warning-message {
+    font-size: 0.9rem;
+  }
+  
+  .success-modal .btn-primary,
+  .duplicate-warning-modal .btn-primary {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9rem;
+    width: 100%;
+  }
+}
+
+/* Extra small phones (iPhone SE, etc.) */
+@media (max-width: 375px) {
+  .clock-header h1 {
     font-size: 1.1rem;
+  }
+  
+  .clock-time {
+    font-size: 1.9rem;
+  }
+  
+  .clock-date {
+    font-size: 0.8rem;
+  }
+  
+  .clock-buttons-grid {
+    gap: 0.4rem;
+  }
+  
+  .clock-btn {
+    padding: 0.875rem 0.4rem 1rem;
+    min-height: 80px;
+  }
+  
+  .clock-btn-label {
+    font-size: 0.8rem;
+  }
+  
+  .clock-btn-badge {
+    font-size: 0.45rem;
+    padding: 0.08rem 0.35rem;
+  }
+}
+
+/* Landscape mode on phones */
+@media (max-width: 896px) and (orientation: landscape) {
+  .clock-display-card {
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .clock-time {
+    font-size: 2rem;
+  }
+  
+  .clock-date {
+    font-size: 0.85rem;
+  }
+  
+  .clock-buttons-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .clock-btn {
+    padding: 0.75rem 0.5rem 1rem;
+    min-height: auto;
+  }
+  
+  .clock-btn-label {
+    font-size: 0.85rem;
+  }
+  
+  .clock-btn-time {
+    display: none;
   }
 }
 
@@ -2826,4 +3567,66 @@ kbd {
   background: linear-gradient(135deg, #34ce57 0%, #4ae06a 100%);
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+}
+
+/* ===========================
+   Safe Area Support (Notched phones)
+   =========================== */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .clock-in-page {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  .container {
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+  }
+  
+  .modal-content,
+  .success-modal,
+  .duplicate-warning-modal {
+    margin-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* ===========================
+   Active States for Touch
+   =========================== */
+@media (hover: none) and (pointer: coarse) {
+  .clock-btn:active {
+    transform: scale(0.95);
+    transition: transform 0.1s ease;
+  }
+  
+  .btn-refresh:active,
+  .btn-fullscreen:active,
+  .btn-primary:active,
+  .preset-btn:active {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  
+  /* Remove hover effects on touch devices */
+  .clock-btn:hover {
+    transform: none;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  }
+}
+
+/* ===========================
+   Print Styles (hide interactive elements)
+   =========================== */
+@media print {
+  .clock-buttons-grid,
+  .help-btn,
+  .btn-refresh,
+  .btn-fullscreen,
+  .modal-overlay {
+    display: none !important;
+  }
+  
+  .clock-display-card {
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
 }

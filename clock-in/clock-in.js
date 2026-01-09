@@ -234,6 +234,9 @@
       if (e.target.id === 'clockInModal') closeClockModal();
     });
     
+    // Save button in clock modal
+    document.getElementById('btnSaveClockRecord')?.addEventListener('click', saveClockRecord);
+    
     // Global keyboard listener (document level) - allows Enter to save even without input focus
     document.addEventListener('keydown', handleGlobalKeydown);
     
@@ -282,6 +285,36 @@
     if (todaySearchInput) {
       todaySearchInput.addEventListener('input', handleTodaySearchInput);
     }
+    
+    // Mobile search functionality
+    const mobileSearchInput = document.getElementById('mobileSearchInput');
+    const mobileSearchBtn = document.getElementById('btnMobileSearch');
+    if (mobileSearchInput) {
+      mobileSearchInput.addEventListener('input', handleMobileSearchInput);
+      mobileSearchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          selectMobileSuggestionOrSearch();
+        }
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          navigateMobileSuggestions(e.key === 'ArrowDown' ? 1 : -1);
+        }
+        if (e.key === 'Escape') {
+          hideMobileSuggestions();
+        }
+      });
+      mobileSearchInput.addEventListener('focus', handleMobileSearchInput);
+    }
+    if (mobileSearchBtn) {
+      mobileSearchBtn.addEventListener('click', selectMobileSuggestionOrSearch);
+    }
+    // Close mobile suggestions when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.mobile-search-card')) {
+        hideMobileSuggestions();
+      }
+    });
     
     // Date filter
     document.getElementById('btnApplyDateFilter')?.addEventListener('click', applyDateFilter);
@@ -1335,6 +1368,240 @@
   }
 
   /**
+   * Search attendance for mobile - uses the same logic as searchAttendance
+   */
+  async function searchMobileAttendance() {
+    const searchInput = document.getElementById('mobileSearchInput');
+    if (!searchInput) return;
+    
+    const searchValue = searchInput.value.toLowerCase().trim();
+    
+    if (!searchValue) {
+      showNotification('Please enter a name or Employee ID to search.', 'warning');
+      return;
+    }
+    
+    // Find matching employee - first try exact match, then partial match
+    let match = allEmployees.find(emp => 
+      emp.fullName.toLowerCase() === searchValue ||
+      emp.employeeId.toLowerCase() === searchValue
+    );
+    
+    // If no exact match, try partial match
+    if (!match) {
+      match = allEmployees.find(emp => 
+        emp.fullName.toLowerCase().includes(searchValue) ||
+        emp.firstName.toLowerCase().includes(searchValue) ||
+        emp.lastName.toLowerCase().includes(searchValue) ||
+        emp.employeeId.toLowerCase().includes(searchValue)
+      );
+    }
+    
+    if (!match) {
+      showNotification('Employee not found. Please check the name or ID.', 'warning');
+      return;
+    }
+    
+    searchedEmployee = match;
+    
+    // Show modal with employee info
+    const modal = document.getElementById('searchResultsModal');
+    const employeeInfo = document.getElementById('modalEmployeeInfo');
+    
+    if (employeeInfo) {
+      const initials = getInitials(match.fullName);
+      employeeInfo.innerHTML = `
+        <div class="modal-employee-avatar">${initials}</div>
+        <div class="modal-employee-details">
+          <h2 class="modal-employee-name">${match.fullName}</h2>
+          <div class="modal-employee-meta">
+            <span>🆔 ${match.employeeId}</span>
+            <span>🏢 ${match.department || 'N/A'}</span>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Show the modal
+    if (modal) {
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+    
+    // Set default date range (this month)
+    setDefaultDateRange();
+    
+    // Load attendance records
+    await loadEmployeeAttendanceModal();
+    
+    // Clear the mobile search input and hide suggestions
+    searchInput.value = '';
+    hideMobileSuggestions();
+  }
+
+  // Mobile search suggestion state
+  let selectedMobileSuggestionIndex = -1;
+
+  /**
+   * Handle mobile search input for suggestions
+   */
+  function handleMobileSearchInput(e) {
+    const searchValue = e.target.value.toLowerCase().trim();
+    const suggestionsContainer = document.getElementById('mobileSuggestions');
+    
+    if (!suggestionsContainer) return;
+    
+    if (!searchValue || searchValue.length < 1) {
+      hideMobileSuggestions();
+      return;
+    }
+    
+    // Filter employees matching the search
+    const matches = allEmployees.filter(emp => 
+      emp.fullName.toLowerCase().includes(searchValue) ||
+      emp.firstName.toLowerCase().includes(searchValue) ||
+      emp.lastName.toLowerCase().includes(searchValue) ||
+      emp.employeeId.toLowerCase().includes(searchValue)
+    ).slice(0, 5); // Limit to 5 suggestions
+    
+    if (matches.length === 0) {
+      suggestionsContainer.innerHTML = `
+        <div class="mobile-no-suggestions">No employees found</div>
+      `;
+      suggestionsContainer.classList.add('active');
+      return;
+    }
+    
+    selectedMobileSuggestionIndex = -1;
+    
+    suggestionsContainer.innerHTML = matches.map((emp, index) => `
+      <div class="mobile-suggestion-item" data-index="${index}" data-employee-id="${emp.employeeId}">
+        <div class="mobile-suggestion-avatar">${getInitials(emp.fullName)}</div>
+        <div class="mobile-suggestion-info">
+          <div class="mobile-suggestion-name">${emp.fullName}</div>
+          <div class="mobile-suggestion-details">${emp.employeeId} • ${emp.department || 'N/A'}</div>
+        </div>
+      </div>
+    `).join('');
+    
+    suggestionsContainer.classList.add('active');
+    
+    // Add click handlers to suggestions
+    suggestionsContainer.querySelectorAll('.mobile-suggestion-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const empId = item.dataset.employeeId;
+        const emp = allEmployees.find(e => e.employeeId === empId);
+        if (emp) {
+          selectMobileEmployee(emp);
+        }
+      });
+    });
+  }
+
+  /**
+   * Hide mobile suggestions
+   */
+  function hideMobileSuggestions() {
+    const suggestionsContainer = document.getElementById('mobileSuggestions');
+    if (suggestionsContainer) {
+      suggestionsContainer.classList.remove('active');
+      suggestionsContainer.innerHTML = '';
+    }
+    selectedMobileSuggestionIndex = -1;
+  }
+
+  /**
+   * Navigate mobile suggestions with arrow keys
+   */
+  function navigateMobileSuggestions(direction) {
+    const suggestionsContainer = document.getElementById('mobileSuggestions');
+    if (!suggestionsContainer) return;
+    
+    const items = suggestionsContainer.querySelectorAll('.mobile-suggestion-item');
+    if (items.length === 0) return;
+    
+    // Remove previous selection
+    items.forEach(item => item.classList.remove('selected'));
+    
+    // Update index
+    selectedMobileSuggestionIndex += direction;
+    if (selectedMobileSuggestionIndex < 0) selectedMobileSuggestionIndex = items.length - 1;
+    if (selectedMobileSuggestionIndex >= items.length) selectedMobileSuggestionIndex = 0;
+    
+    // Add selection
+    items[selectedMobileSuggestionIndex].classList.add('selected');
+    items[selectedMobileSuggestionIndex].scrollIntoView({ block: 'nearest' });
+  }
+
+  /**
+   * Select suggestion or search
+   */
+  function selectMobileSuggestionOrSearch() {
+    const suggestionsContainer = document.getElementById('mobileSuggestions');
+    
+    if (suggestionsContainer && selectedMobileSuggestionIndex >= 0) {
+      const items = suggestionsContainer.querySelectorAll('.mobile-suggestion-item');
+      if (items[selectedMobileSuggestionIndex]) {
+        const empId = items[selectedMobileSuggestionIndex].dataset.employeeId;
+        const emp = allEmployees.find(e => e.employeeId === empId);
+        if (emp) {
+          selectMobileEmployee(emp);
+          return;
+        }
+      }
+    }
+    
+    // If no suggestion selected, do regular search
+    searchMobileAttendance();
+  }
+
+  /**
+   * Select mobile employee and show their records
+   */
+  async function selectMobileEmployee(emp) {
+    const searchInput = document.getElementById('mobileSearchInput');
+    if (searchInput) {
+      searchInput.value = emp.fullName;
+    }
+    
+    hideMobileSuggestions();
+    searchedEmployee = emp;
+    
+    // Show modal with employee info
+    const modal = document.getElementById('searchResultsModal');
+    const employeeInfo = document.getElementById('modalEmployeeInfo');
+    
+    if (employeeInfo) {
+      const initials = getInitials(emp.fullName);
+      employeeInfo.innerHTML = `
+        <div class="modal-employee-avatar">${initials}</div>
+        <div class="modal-employee-details">
+          <h2 class="modal-employee-name">${emp.fullName}</h2>
+          <div class="modal-employee-meta">
+            <span>🆔 ${emp.employeeId}</span>
+            <span>🏢 ${emp.department || 'N/A'}</span>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Show the modal
+    if (modal) {
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+    
+    // Set default date range
+    setDefaultDateRange();
+    
+    // Load attendance records
+    await loadEmployeeAttendanceModal();
+    
+    // Clear input
+    if (searchInput) searchInput.value = '';
+  }
+
+  /**
    * Set default date range to current month
    */
   function setDefaultDateRange() {
@@ -1454,6 +1721,7 @@
     const modal = document.getElementById('searchResultsModal');
     if (modal) {
       modal.classList.remove('show');
+      modal.classList.remove('active');
       document.body.style.overflow = '';
     }
   }
