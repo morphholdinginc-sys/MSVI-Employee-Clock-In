@@ -613,17 +613,24 @@
   /**
    * Show the duplicate entry warning modal
    */
-  function showDuplicateWarningModal(employeeName, actionLabel, recordedTime) {
+  function showDuplicateWarningModal(employeeName, actionLabel, recordedTime, recordId, recordDate) {
     const modal = document.getElementById('duplicateWarningModal');
     const messageEl = document.getElementById('duplicateWarningMessage');
     const employeeEl = document.getElementById('duplicateEmployeeName');
     const actionEl = document.getElementById('duplicateActionType');
     const timeEl = document.getElementById('duplicateRecordedTime');
+    const dateEl = document.getElementById('duplicateRecordDate');
+    const recordIdEl = document.getElementById('duplicateRecordId');
     
     if (messageEl) messageEl.textContent = 'This employee has already clocked in for this time slot today.';
     if (employeeEl) employeeEl.textContent = employeeName;
     if (actionEl) actionEl.textContent = actionLabel;
     if (timeEl) timeEl.textContent = recordedTime;
+    if (dateEl) dateEl.textContent = recordDate || new Date().toISOString().split('T')[0];
+    if (recordIdEl) recordIdEl.textContent = recordId || 'N/A';
+    
+    // Log for debugging
+    console.log('[Clock In] Duplicate record found:', { recordId, recordDate, employeeName, actionLabel, recordedTime });
     
     if (modal) modal.style.display = 'flex';
   }
@@ -1110,8 +1117,10 @@
         const existingTime = existingRecord.fields[actionType];
         
         if (existingTime) {
-          // Already clocked for this time slot - show warning modal
-          showDuplicateWarningModal(employeeName, getActionLabel(actionType), existingTime);
+          // Already clocked for this time slot - show warning modal with record details
+          const recordId = existingRecord.id;
+          const recordDate = existingRecord.fields.Date || dateValue;
+          showDuplicateWarningModal(employeeName, getActionLabel(actionType), existingTime, recordId, recordDate);
           clearClockModalFields();
           isSaving = false;
           return;
