@@ -1,11 +1,479 @@
-<!DOCTYPE html>
-<html>
+﻿<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0; url=/clock-in/">
-  <title>Redirecting...</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Clock In - Morph Sagrado Ventures Inc.</title>
+  
+  <!-- SEO & Social Media Meta Tags -->
+  <meta name="description" content="Employee time tracking and clock-in system for Morph Sagrado Ventures Inc.">
+  
+  <!-- Open Graph / Facebook / Messenger -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://msvi-employee-clock-in.vercel.app/">
+  <meta property="og:title" content="MSVI Employee Clock In">
+  <meta property="og:description" content="Employee time tracking and clock-in system for Morph Sagrado Ventures Inc.">
+  <meta property="og:image" content="https://msvi-employee-clock-in.vercel.app/og-image.png">
+  <meta property="og:image:secure_url" content="https://msvi-employee-clock-in.vercel.app/og-image.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1563">
+  <meta property="og:image:height" content="1563">
+  <meta property="og:image:alt" content="MSVI Logo">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MSVI Employee Clock In">
+  <meta name="twitter:description" content="Employee time tracking and clock-in system for Morph Sagrado Ventures Inc.">
+  <meta name="twitter:image" content="https://msvi-employee-clock-in.vercel.app/og-image.png">
+  
+  <!-- PWA Meta -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MSVI Clock In">
+  <meta name="theme-color" content="#0f5132">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css" />
+  
+  <!-- Airtable Config -->
+  <script src="airtable-config.js"></script>
 </head>
 <body>
-  <p>Redirecting to <a href="/clock-in/">Clock In</a>...</p>
+  <div class="main-wrapper clock-in-page">
+    <header class="clock-header">
+      <div class="header-content">
+        <div class="header-title-row">
+          <h1>&#x23F0; Employee Clock In</h1>
+          <button class="help-btn" id="btnShowHelp" title="How to use">
+            <span>&#x2753;</span> How to Use
+          </button>
+        </div>
+        <p class="header-subtitle">Time tracking for Morph Sagrado Ventures Inc.</p>
+      </div>
+    </header>
+    
+    <main class="container">
+      <!-- Live Clock Display -->
+      <div class="clock-display-card">
+        <div class="clock-time" id="mainClockDisplay">--:--:-- --</div>
+        <div class="clock-date" id="mainDateDisplay">Loading...</div>
+      </div>
+      
+      <!-- Clock Action Buttons -->
+      <div class="clock-buttons-grid">
+        <button class="clock-btn clock-btn-in" id="btnMorningIn">
+          <span class="clock-btn-emoji">🌅</span>
+          <span class="clock-btn-label">MORNING</span>
+          <span class="clock-btn-sublabel">TIME IN</span>
+        </button>
+        <button class="clock-btn clock-btn-out" id="btnMorningOut">
+          <span class="clock-btn-emoji">🍽️</span>
+          <span class="clock-btn-label">MORNING</span>
+          <span class="clock-btn-sublabel">TIME OUT</span>
+        </button>
+        <button class="clock-btn clock-btn-in" id="btnAfternoonIn">
+          <span class="clock-btn-emoji">☀️</span>
+          <span class="clock-btn-label">AFTERNOON</span>
+          <span class="clock-btn-sublabel">TIME IN</span>
+        </button>
+        <button class="clock-btn clock-btn-out" id="btnAfternoonOut">
+          <span class="clock-btn-emoji">🌙</span>
+          <span class="clock-btn-label">AFTERNOON</span>
+          <span class="clock-btn-sublabel">TIME OUT</span>
+        </button>
+      </div>
+      
+      <!-- Mobile Search Section (visible only on mobile) -->
+      <div class="mobile-search-section">
+        <div class="mobile-search-card">
+          <div class="mobile-search-header">
+            <span class="mobile-search-icon">&#x1F50D;</span>
+            <h3>Search Attendance</h3>
+          </div>
+          <div class="mobile-search-input-wrapper">
+            <input 
+              type="text" 
+              id="mobileSearchInput" 
+              class="mobile-search-input"
+              placeholder="Enter employee name..."
+              autocomplete="off"
+            />
+            <button class="mobile-search-btn" id="btnMobileSearch">
+              Search
+            </button>
+            <!-- Mobile Suggestions Dropdown - positioned inside wrapper -->
+            <div id="mobileSuggestions" class="mobile-suggestions-dropdown"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Today's Attendance Section -->
+      <div class="today-section">
+        <div class="today-card">
+          <div class="today-card-header">
+            <div class="today-header-left">
+              <span class="today-icon">&#x1F4CB;</span>
+              <div>
+                <h3>Today's Attendance</h3>
+                <span id="todayDateDisplay" class="today-date-badge"></span>
+              </div>
+            </div>
+            <div class="today-header-right">
+              <!-- Filter for Today's table -->
+              <div class="today-search-wrapper">
+                <span class="today-search-icon">&#x1F50D;</span>
+                <input 
+                  type="text" 
+                  id="todaySearchInput" 
+                  class="today-search-input"
+                  placeholder="Search employee..."
+                  autocomplete="off"
+                />
+              </div>
+              <button class="btn-refresh" id="btnRefreshAttendance" onclick="window.loadTodayAttendance()">
+                <span>&#x21BB;</span> Refresh
+              </button>
+              <button class="btn-fullscreen" id="btnFullscreenAttendance" title="View Fullscreen">
+                <span>&#x26F6;</span>
+              </button>
+            </div>
+          </div>
+          <div class="table-wrapper compact-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Department</th>
+                  <th>Morning In</th>
+                  <th>Morning Out</th>
+                  <th>Afternoon In</th>
+                  <th>Afternoon Out</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="todayAttendanceBody">
+                <tr>
+                  <td colspan="7" class="no-data">Loading attendance records...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+    
+    <!-- Clock In Modal -->
+    <div id="clockInModal" class="modal">
+      <div class="modal-content clock-modal">
+        <button class="modal-close" id="closeClockModal">&times;</button>
+        <h2 id="clockActionTitle" class="modal-title">Morning Time In</h2>
+        <p class="modal-subtitle">Current Time</p>
+        <div class="modal-clock-display" id="modalClockDisplay">--:--:--</div>
+        
+        <div class="employee-search-container">
+          <p class="search-prompt">Search employee name or scan barcode ID:</p>
+          <div class="modal-search-wrapper">
+            <input 
+              type="text" 
+              id="clockInEmployeeSearch" 
+              class="employee-search-input"
+              placeholder="Type name or scan ID..."
+              autocomplete="off"
+            />
+            <!-- Custom Suggestions Dropdown for Modal -->
+            <div id="clockInSuggestions" class="modal-suggestions-dropdown"></div>
+          </div>
+          <div id="selectedEmployeeDisplay" class="selected-employee-display"></div>
+          
+          <!-- Save Button -->
+          <button class="clock-save-btn" id="btnSaveClockRecord">
+            <span class="save-btn-icon">&#x2714;</span>
+            Save Attendance
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Search Results Modal -->
+    <div id="searchResultsModal" class="modal">
+      <div class="modal-content search-results-modal">
+        <button class="modal-close" id="closeSearchResultsModal">&times;</button>
+        
+        <!-- Employee Info Header -->
+        <div id="modalEmployeeInfo" class="modal-employee-info"></div>
+        
+        <!-- Date Filter -->
+        <div class="modal-date-filter-section" id="modalDateFilterSection">
+          <div class="date-presets">
+            <span class="preset-label">Quick View:</span>
+            <button class="preset-btn active" data-preset="this-month">This Month</button>
+            <button class="preset-btn" data-preset="last-month">Last Month</button>
+            <button class="preset-btn" data-preset="last-3-months">Last 3 Months</button>
+            <button class="preset-btn" data-preset="last-6-months">Last 6 Months</button>
+            <button class="preset-btn" data-preset="this-year">This Year</button>
+            <button class="preset-btn" data-preset="all-time">All Time</button>
+          </div>
+          
+          <div class="custom-date-range">
+            <span class="preset-label">Custom Range:</span>
+            <div class="date-inputs">
+              <div class="filter-group">
+                <label for="modalFromDate">From</label>
+                <input type="date" id="modalFromDate" />
+              </div>
+              <div class="filter-group">
+                <label for="modalToDate">To</label>
+                <input type="date" id="modalToDate" />
+              </div>
+              <button class="btn-secondary" id="btnModalApplyDateFilter">Apply</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Results Summary -->
+        <div class="modal-results-header">
+          <h4 id="modalResultsTitle">Attendance Records</h4>
+          <div class="results-summary" id="modalAttendanceSummary"></div>
+        </div>
+        
+        <!-- Attendance Table -->
+        <div class="modal-table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Morning In</th>
+                <th>Morning Out</th>
+                <th>Afternoon In</th>
+                <th>Afternoon Out</th>
+                <th>Total Hours</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="modalAttendanceBody">
+              <tr>
+                <td colspan="7" class="no-data">No records found</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Notification -->
+    <div id="clockNotification" class="notification"></div>
+    
+    <!-- Fullscreen Attendance Modal -->
+    <div id="fullscreenAttendanceModal" class="modal fullscreen-modal" style="display: none;">
+      <div class="modal-content fullscreen-modal-content">
+        <div class="modal-header fullscreen-header">
+          <div class="fullscreen-title-section">
+            <span class="fullscreen-icon">&#x1F4CB;</span>
+            <div>
+              <h2>Today's Attendance</h2>
+              <span id="fullscreenDateDisplay" class="fullscreen-date-badge"></span>
+            </div>
+          </div>
+          <div class="fullscreen-controls">
+            <div class="fullscreen-search-wrapper">
+              <span class="fullscreen-search-icon">&#x1F50D;</span>
+              <input 
+                type="text" 
+                id="fullscreenSearchInput" 
+                class="fullscreen-search-input"
+                placeholder="Search employee..."
+                autocomplete="off"
+              />
+            </div>
+            <button class="btn-refresh-fullscreen" id="btnRefreshFullscreen">
+              <span>&#x21BB;</span> Refresh
+            </button>
+            <button class="fullscreen-close" id="closeFullscreenModal" title="Close">&times;</button>
+          </div>
+        </div>
+        <div class="fullscreen-table-wrapper">
+          <table class="fullscreen-table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Morning In</th>
+                <th>Morning Out</th>
+                <th>Afternoon In</th>
+                <th>Afternoon Out</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="fullscreenAttendanceBody">
+              <tr>
+                <td colspan="6" class="no-data">Loading attendance records...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="fullscreen-footer">
+          <span class="fullscreen-count" id="fullscreenRecordCount">0 records</span>
+          <button class="btn-primary" id="btnCloseFullscreen">Close</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Help/Instructions Modal -->
+    <div id="helpModal" class="modal" style="display: none;">
+      <div class="modal-content help-modal-content">
+        <div class="modal-header">
+          <h2>&#x1F4D6; How to Use Clock In System</h2>
+          <button class="modal-close" id="closeHelpModal">&times;</button>
+        </div>
+        <div class="modal-body help-modal-body">
+          
+          <!-- Scanner Method -->
+          <div class="help-section">
+            <div class="help-section-header">
+              <span class="help-icon">&#x1F4F1;</span>
+              <h3>Using Barcode Scanner (Recommended)</h3>
+            </div>
+            <div class="help-steps">
+              <div class="help-step">
+                <span class="step-number">1</span>
+                <div class="step-content">
+                  <strong>Select Time Action</strong>
+                  <p>Click one of the clock buttons: Morning Time In, Morning Time Out, Afternoon Time In, or Afternoon Time Out</p>
+                </div>
+              </div>
+              <div class="help-step">
+                <span class="step-number">2</span>
+                <div class="step-content">
+                  <strong>Scan Employee Barcode</strong>
+                  <p>Point the scanner at the employee's ID barcode. The scanner will automatically input the Employee ID.</p>
+                </div>
+              </div>
+              <div class="help-step">
+                <span class="step-number">3</span>
+                <div class="step-content">
+                  <strong>Automatic Save</strong>
+                  <p>The system will automatically find the employee and save the attendance record. You'll see a success notification.</p>
+                </div>
+              </div>
+            </div>
+            <div class="help-tip success">
+              <span>&#x1F4A1;</span> <strong>Tip:</strong> The scanner sends an Enter key automatically, so the record saves instantly after scanning!
+            </div>
+          </div>
+          
+          <!-- Manual Method -->
+          <div class="help-section">
+            <div class="help-section-header">
+              <span class="help-icon">&#x2328;</span>
+              <h3>Manual Entry (Keyboard)</h3>
+            </div>
+            <div class="help-steps">
+              <div class="help-step">
+                <span class="step-number">1</span>
+                <div class="step-content">
+                  <strong>Select Time Action</strong>
+                  <p>Click one of the clock buttons (Morning In, Morning Out, etc.)</p>
+                </div>
+              </div>
+              <div class="help-step">
+                <span class="step-number">2</span>
+                <div class="step-content">
+                  <strong>Type Employee ID or Name</strong>
+                  <p>Enter the Employee ID (e.g., "EMP-001") or start typing the employee's name. Suggestions will appear as you type.</p>
+                </div>
+              </div>
+              <div class="help-step">
+                <span class="step-number">3</span>
+                <div class="step-content">
+                  <strong>Select &amp; Save</strong>
+                  <p>Click on a suggestion to select the employee, or press <kbd>Enter</kbd> to auto-match and save.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Important Notes -->
+          <div class="help-section">
+            <div class="help-section-header">
+              <span class="help-icon">&#x26A0;</span>
+              <h3>Important Notes</h3>
+            </div>
+            <div class="help-notes">
+              <div class="help-note warning">
+                <span>&#x1F512;</span>
+                <p><strong>Duplicate Prevention:</strong> If an employee already has a record for a specific time slot (e.g., Morning Time In), the system will show a warning and prevent duplicate entries.</p>
+              </div>
+              <div class="help-note info">
+                <span>&#x1F194;</span>
+                <p><strong>ID Matching:</strong> Employee IDs with or without hyphens will match correctly (e.g., "EMP-001" and "EMP001" both work).</p>
+              </div>
+              <div class="help-note info">
+                <span>&#x1F4CB;</span>
+                <p><strong>View Records:</strong> Check "Today's Attendance" table below to see all clock-in records for today.</p>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+        <div class="modal-footer">
+          <button class="btn-primary" id="btnCloseHelpModal">Got it!</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Duplicate Entry Warning Modal -->
+    <div id="duplicateWarningModal" class="modal" style="display: none;">
+      <div class="modal-content duplicate-warning-modal">
+        <div class="duplicate-warning-icon">&#x26A0;</div>
+        <h2 class="duplicate-warning-title">Already Recorded</h2>
+        <p id="duplicateWarningMessage" class="duplicate-warning-message"></p>
+        <div class="duplicate-warning-details">
+          <div class="duplicate-detail-row">
+            <span class="detail-label">Employee:</span>
+            <span id="duplicateEmployeeName" class="detail-value"></span>
+          </div>
+          <div class="duplicate-detail-row">
+            <span class="detail-label">Action:</span>
+            <span id="duplicateActionType" class="detail-value"></span>
+          </div>
+          <div class="duplicate-detail-row">
+            <span class="detail-label">Recorded Time:</span>
+            <span id="duplicateRecordedTime" class="detail-value"></span>
+          </div>
+        </div>
+        <button class="btn-primary" id="btnCloseDuplicateWarning">OK, Got it</button>
+      </div>
+    </div>
+    
+    <!-- Success Modal -->
+    <div id="successModal" class="modal" style="display: none;">
+      <div class="modal-content success-modal">
+        <div class="success-icon">&#x2714;</div>
+        <h2 class="success-title">Success!</h2>
+        <p id="successMessage" class="success-message"></p>
+        <div class="success-details">
+          <div class="success-detail-row">
+            <span class="detail-label">Employee:</span>
+            <span id="successEmployeeName" class="detail-value"></span>
+          </div>
+          <div class="success-detail-row">
+            <span class="detail-label">Action:</span>
+            <span id="successActionType" class="detail-value"></span>
+          </div>
+          <div class="success-detail-row">
+            <span class="detail-label">Time:</span>
+            <span id="successRecordedTime" class="detail-value"></span>
+          </div>
+        </div>
+        <button class="btn-primary" id="btnCloseSuccess">OK</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- JavaScript -->
+  <script src="clock-in-api.js"></script>
+  <script src="clock-in.js"></script>
 </body>
 </html>
+
