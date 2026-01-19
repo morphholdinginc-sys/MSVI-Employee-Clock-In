@@ -1093,7 +1093,11 @@
       minute: '2-digit',
       hour12: true 
     });
-    const dateValue = now.toISOString().split('T')[0];
+    // Use local date instead of UTC to avoid timezone issues
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const dateValue = `${year}-${month}-${day}`;
     
     // Prevent multiple saves (double protection with cooldown)
     if (isSaving) {
