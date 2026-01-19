@@ -52,6 +52,24 @@ window.showAddAttendanceModal = async function() {
     }
   }
   
+  // Show/Hide lunch adjustment badge
+  const lunchBadge = document.getElementById('addLunchAdjustmentBadge');
+  if (lunchBadge) {
+    const empStandardWeeklyHours = Number(employee?.standardWorkweekHours) || 40;
+    const empScheduleSpan = getScheduleSpanHours(employee?.coreWorkingHours);
+    const empDailyFromWeekly = empStandardWeeklyHours / 7;
+    const hasLunchAdjustment = empScheduleSpan !== null && empScheduleSpan === empDailyFromWeekly && empScheduleSpan > 8;
+    if (hasLunchAdjustment) {
+      lunchBadge.style.display = 'block';
+      const scheduleDisplay = document.getElementById('addScheduleDisplay');
+      const actualWorkDisplay = document.getElementById('addActualWorkDisplay');
+      if (scheduleDisplay) scheduleDisplay.textContent = `${empScheduleSpan} hrs`;
+      if (actualWorkDisplay) actualWorkDisplay.textContent = `${empScheduleSpan - 1} hrs`;
+    } else {
+      lunchBadge.style.display = 'none';
+    }
+  }
+  
   // Ensure submit handler is attached even if DOMContentLoaded already fired
   const addForm = document.getElementById('addAttendanceForm');
   if (addForm) {
@@ -1161,21 +1179,16 @@ async function handleAddAttendanceSubmit(event) {
   
   const employee = employeesMap.get(employeeId);
   const standardWorkweekHours = employee?.standardWorkweekHours || 40;
-  const dailyStandardHours = standardWorkweekHours / 7;
-  
-  // Calculate actual work hours first
-  let actualWorkHours = totalMinutes / 60;
-  
-  // Get schedule span from coreWorkingHours (e.g., "8:00 AM - 6:00 PM" = 10 hours)
+  // If Core Working Hours span equals daily standard and > 8 hrs, lunch break wasn't accounted for
   const scheduleSpan = getScheduleSpanHours(employee?.coreWorkingHours);
-  
-  // Add 1-hour lunch break only if:
-  // 1. Both AM and PM shifts are worked
-  // 2. Schedule span exists and is greater than daily standard (indicates lunch is included in span)
-  // 3. Actual work hours < daily standard hours (need to add lunch to reach standard)
-  if (hasAM && hasPM && scheduleSpan && scheduleSpan > dailyStandardHours && actualWorkHours < dailyStandardHours) {
-    totalMinutes += 60;
+  const dailyFromWeekly = standardWorkweekHours / 7;
+  let dailyStandardHours = dailyFromWeekly;
+  if (scheduleSpan !== null && scheduleSpan === dailyFromWeekly && scheduleSpan > 8) {
+    dailyStandardHours = dailyFromWeekly - 1; // Subtract 1 hour for lunch
   }
+  
+  // Total hours = AM session + PM session (no lunch adjustment needed)
+  // Lunch break is naturally excluded since we calculate each session separately
   
   const isAbsent = !hasAM && !hasPM || (remarks.toLowerCase().includes('absent'));
   const isHalfDay = (hasAM && !hasPM) || (!hasAM && hasPM) || (!isAbsent && totalMinutes < 240);
@@ -1270,13 +1283,21 @@ async function handleAddAttendanceSubmit(event) {
 }
 
 
+// Helper function to reset the edit attendance submit button
+function resetEditAttendanceButton() {
+  const submitBtn = document.querySelector('#editAttendanceForm button[type="submit"]');
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Save Changes';
+  }
+}
+
 // Edit Attendance
 async function handleEditAttendanceSubmit(event) {
   event.preventDefault();
   
-  // Get submit button and change text
-  const submitBtn = event.target.querySelector('button[type="submit"]');
-  const originalText = submitBtn?.textContent || 'Save Changes';
+  // Get submit button and change text - use document.querySelector for reliability after form clone
+  const submitBtn = document.querySelector('#editAttendanceForm button[type="submit"]');
   if (submitBtn) {
     submitBtn.disabled = true;
     submitBtn.textContent = 'Saving...';
@@ -1297,10 +1318,7 @@ async function handleEditAttendanceSubmit(event) {
     );
   
     if (duplicateExists) {
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.textContent = originalText;
-      }
+      resetEditAttendanceButton();
       showAttendanceNotification('An attendance record already exists for this employee on ' + newDate + '. Please choose a different date.', 'warning');
       return;
     }
@@ -1328,21 +1346,16 @@ async function handleEditAttendanceSubmit(event) {
   
   const employee = employeesMap.get(employeeId);
   const standardWorkweekHours = employee?.standardWorkweekHours || 40;
-  const dailyStandardHours = standardWorkweekHours / 7;
-  
-  // Calculate actual work hours first
-  let actualWorkHours = totalMinutes / 60;
-  
-  // Get schedule span from coreWorkingHours (e.g., "8:00 AM - 6:00 PM" = 10 hours)
+  // If Core Working Hours span equals daily standard and > 8 hrs, lunch break wasn't accounted for
   const scheduleSpan = getScheduleSpanHours(employee?.coreWorkingHours);
-  
-  // Add 1-hour lunch break only if:
-  // 1. Both AM and PM shifts are worked
-  // 2. Schedule span exists and is >= daily standard (indicates lunch may be included in span)
-  // 3. Actual work hours < daily standard hours (need to add lunch to reach standard)
-  if (hasAM && hasPM && scheduleSpan && scheduleSpan >= dailyStandardHours && actualWorkHours < dailyStandardHours) {
-    totalMinutes += 60;
+  const dailyFromWeekly = standardWorkweekHours / 7;
+  let dailyStandardHours = dailyFromWeekly;
+  if (scheduleSpan !== null && scheduleSpan === dailyFromWeekly && scheduleSpan > 8) {
+    dailyStandardHours = dailyFromWeekly - 1; // Subtract 1 hour for lunch
   }
+  
+  // Total hours = AM session + PM session (no lunch adjustment needed)
+  // Lunch break is naturally excluded since we calculate each session separately
   
   const isAbsent = !hasAM && !hasPM || (remarks.toLowerCase().includes('absent'));
   const isHalfDay = (hasAM && !hasPM) || (!hasAM && hasPM) || (!isAbsent && totalMinutes < 240);
@@ -1445,10 +1458,8 @@ async function handleEditAttendanceSubmit(event) {
     console.error('Error updating attendance:', err);
     showAttendanceNotification('Failed to update attendance record: ' + err.message, 'error');
   } finally {
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.textContent = originalText;
-    }
+    // Always reset button state using helper function
+    resetEditAttendanceButton();
   }
 }
 
@@ -1907,6 +1918,8 @@ window.closeEditAttendanceModal = function() {
     modal.style.display = 'none';
     modal.classList.remove('open');
   }
+  // Always reset the save button when modal is closed
+  resetEditAttendanceButton();
 };
 
 // Remove Tailwind-specific close for Add modal; use hideAddAttendanceModal instead

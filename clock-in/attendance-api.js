@@ -110,12 +110,32 @@ async function add(attendance) {
   if (!res.ok) {
     throw new Error(`Airtable error: ${res.status} - ${JSON.stringify(data)}`);
   }
-  return mapRecord(data);
+  
+  const newRecord = mapRecord(data);
+  
+  // Log to Audit Log (CREATE)
+  try {
+    if (window.AuditLog && typeof window.AuditLog.logCreate === 'function') {
+      await window.AuditLog.logCreate('Human Resources', 'Attendance', newRecord, newRecord.id);
+    }
+  } catch (auditErr) {
+    console.warn('Audit log failed (non-blocking):', auditErr);
+  }
+  
+  return newRecord;
 }
 
 // Update attendance record
 
 async function update(id, attendance) {
+  // Fetch old record for audit logging
+  let oldRecord = null;
+  try {
+    oldRecord = await getById(id);
+  } catch (err) {
+    console.warn('Could not fetch old attendance record:', err);
+  }
+  
   const body = {
     fields: mapToAirtableFields(attendance)
   };
@@ -125,16 +145,47 @@ async function update(id, attendance) {
     body: JSON.stringify(body)
   });
   const data = await res.json();
-  return mapRecord(data);
+  const updatedRecord = mapRecord(data);
+  
+  // Log to Audit Log (UPDATE)
+  try {
+    if (window.AuditLog && typeof window.AuditLog.logUpdate === 'function') {
+      await window.AuditLog.logUpdate('Human Resources', 'Attendance', oldRecord, updatedRecord, id);
+    }
+  } catch (auditErr) {
+    console.warn('Audit log failed (non-blocking):', auditErr);
+  }
+  
+  return updatedRecord;
 }
 
 // Delete attendance record
 
 async function remove(id) {
+  // Fetch record for audit logging before delete
+  let deletedRecord = null;
+  try {
+    deletedRecord = await getById(id);
+  } catch (err) {
+    console.warn('Could not fetch attendance record before delete:', err);
+  }
+  
   const res = await fetch(`${getAttendanceTableUrl()}/${id}`, {
     method: 'DELETE',
     headers: headers()
   });
+  
+  if (res.ok) {
+    // Log to Audit Log (DELETE)
+    try {
+      if (window.AuditLog && typeof window.AuditLog.logDelete === 'function' && deletedRecord) {
+        await window.AuditLog.logDelete('Human Resources', 'Attendance', deletedRecord, id);
+      }
+    } catch (auditErr) {
+      console.warn('Audit log failed (non-blocking):', auditErr);
+    }
+  }
+  
   return res.ok;
 }
 

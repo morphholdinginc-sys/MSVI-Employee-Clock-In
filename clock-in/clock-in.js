@@ -1195,7 +1195,7 @@
     if (filteredAttendance.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="6" class="no-data">${filterText ? 'No matching employees found.' : 'No attendance records for today yet.'}</td>
+          <td colspan="7" class="no-data">${filterText ? 'No matching employees found.' : 'No attendance records for today yet.'}</td>
         </tr>
       `;
       return;
@@ -1205,6 +1205,7 @@
       const fields = record.fields;
       const employee = allEmployees.find(e => e.employeeId === fields.EmployeeId);
       const employeeName = employee ? employee.fullName : fields.EmployeeId;
+      const department = employee?.department || employee?.Department || '-';
       
       return `
         <tr class="clickable-row" data-employee-id="${fields.EmployeeId}" data-employee-name="${employeeName}" title="Click to view attendance history">
@@ -1214,6 +1215,7 @@
               <span class="employee-id">${fields.EmployeeId || ''}</span>
             </div>
           </td>
+          <td>${department}</td>
           <td>${formatTime12Hour(fields.TimeInAM)}</td>
           <td>${formatTime12Hour(fields.TimeOutAM)}</td>
           <td>${formatTime12Hour(fields.TimeInPM)}</td>
@@ -1810,7 +1812,9 @@
    * - Working: Currently logged in (has time in, no time out for current period)
    * - On Break: Morning out done, afternoon not started
    * - Present: Has completed all time entries for the day
-   * - Half Day: Only morning OR only afternoon completed
+   * - Half Day: Only morning OR only afternoon completed (with enough hours)
+   * - Short Hours: Some work but not enough for half day
+   * - Invalid: Too short to count (e.g., less than 30 minutes)
    * - Incomplete: Missing some entries (past records)
    */
   function getAttendanceStatusBadge(record, employee = null) {
@@ -1821,6 +1825,33 @@
     const timeOutAM = fields.TimeOutAM || fields.timeOutAM;
     const timeInPM = fields.TimeInPM || fields.timeInPM;
     const timeOutPM = fields.TimeOutPM || fields.timeOutPM;
+    
+    // Calculate total hours worked
+    let totalMinutes = 0;
+    if (timeInAM && timeOutAM) {
+      const inAM = parseTimeToMinutes(timeInAM);
+      const outAM = parseTimeToMinutes(timeOutAM);
+      if (inAM !== Infinity && outAM !== Infinity) {
+        totalMinutes += Math.max(0, outAM - inAM);
+      }
+    }
+    if (timeInPM && timeOutPM) {
+      const inPM = parseTimeToMinutes(timeInPM);
+      const outPM = parseTimeToMinutes(timeOutPM);
+      if (inPM !== Infinity && outPM !== Infinity) {
+        totalMinutes += Math.max(0, outPM - inPM);
+      }
+    }
+    const totalHours = totalMinutes / 60;
+    
+    // Get employee's standard hours for thresholds
+    const standardWorkweekHours = employee?.standardWorkweekHours || 40;
+    const dailyStd = standardWorkweekHours / 7;
+    const tol = 0.01;
+    
+    // Minimum hours thresholds
+    const minHoursForHalfDay = dailyStd / 2 * 0.75; // At least 75% of half day (e.g., 3 hours for 8-hour day)
+    const minHoursForValid = 0.5; // At least 30 minutes to count as valid work
     
     // Check if record is from today
     const recordDate = fields.Date || fields.date;
@@ -1857,6 +1888,12 @@
       
       // Only afternoon done (half day PM)
       if (!timeInAM && !timeOutAM && timeInPM && timeOutPM) {
+        // Check if enough hours for half day
+        if (totalHours < minHoursForValid) {
+          return '<span class="status-badge status-invalid">Invalid</span>';
+        } else if (totalHours < minHoursForHalfDay) {
+          return '<span class="status-badge status-short">Short Hours</span>';
+        }
         return '<span class="status-badge status-half-day">Half Day</span>';
       }
       
@@ -1872,13 +1909,28 @@
     const hasAM = timeInAM && timeOutAM;
     const hasPM = timeInPM && timeOutPM;
     
-    // Both halves complete
+    // No entries at all
+    if (!hasAM && !hasPM && !timeInAM && !timeOutAM && !timeInPM && !timeOutPM) {
+      return '<span class="status-badge status-absent">Absent</span>';
+    }
+    
+    // Both halves complete - check total hours
     if (hasAM && hasPM) {
+      if (totalHours < (dailyStd - tol)) {
+        return '<span class="status-badge status-short">Short Hours</span>';
+      } else if (totalHours > (dailyStd + tol)) {
+        return '<span class="status-badge status-overtime">Overtime</span>';
+      }
       return '<span class="status-badge status-complete">Present</span>';
     }
     
-    // Only one half complete
+    // Only one half complete - check if enough hours
     if (hasAM || hasPM) {
+      if (totalHours < minHoursForValid) {
+        return '<span class="status-badge status-invalid">Invalid</span>';
+      } else if (totalHours < minHoursForHalfDay) {
+        return '<span class="status-badge status-short">Short Hours</span>';
+      }
       return '<span class="status-badge status-half-day">Half Day</span>';
     }
     

@@ -1438,7 +1438,8 @@ button {
   color: white;
 }
 
-.status-short-hours {
+.status-short-hours,
+.status-short {
   background: #fd7e14;
   color: white;
 }

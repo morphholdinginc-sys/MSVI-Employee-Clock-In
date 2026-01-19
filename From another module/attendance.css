@@ -1,0 +1,503 @@
+/*
+ * Attendance Management Styles
+ * Based on UI Style Guide - Morph Sagrado Ventures Inc
+ * 
+ * Color Palette (from UI Style Guide):
+ * - Dark Green: #0f5132 (Primary gradient start)
+ * - Medium Green: #198754 (Primary gradient end)
+ * - Light Green: #28a745 (Hover states)
+ * - Background Dark: #0d1b0e (Page background)
+ * - Card Background: #113d2a
+ * - Gold/Yellow: #ffc107 (Highlights)
+ * - Border: #275b48
+ */
+
+/* ========================================
+   PAGE LAYOUT (Dark Theme)
+   ======================================== */
+.main-wrapper {
+  background-color: #0d1b0e;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.container {
+  max-width: 100%;
+  padding: 1rem;
+}
+
+/* Page title */
+.main-wrapper h2 {
+  color: #ffffff;
+  margin-bottom: 1rem;
+}
+
+/* ========================================
+   SUMMARY BAR (Metrics Cards)
+   ======================================== */
+.summary-bar.metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.summary-bar.metrics .summary-item {
+  flex: 1 1 150px;
+  background: linear-gradient(135deg, #1a2a1a 0%, #0d1b0e 100%);
+  border: 1px solid #275b48;
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+}
+
+.summary-bar.metrics .summary-item h4 {
+  color: #a0a0a0;
+  font-size: 0.85rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.summary-bar.metrics .summary-item .value {
+  color: #ffc107;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+/* ========================================
+   CARDS (Standard UI Style)
+   ======================================== */
+.card {
+  background: linear-gradient(135deg, #1a2a1a 0%, #0d1b0e 100%);
+  border: 1px solid #275b48;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.card h3 {
+  color: #ffffff;
+  margin: 0 0 1rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+/* ========================================
+   FILTER GRID
+   ======================================== */
+.filters-grid,
+.filter-bar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.filter-bar-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+}
+
+/* ========================================
+   FORM INPUTS (Dark Theme)
+   ======================================== */
+input[type="text"],
+input[type="date"],
+input[type="number"],
+input[type="time"],
+select,
+textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #275b48;
+  border-radius: 4px;
+  background: #0d1b0e;
+  color: #ffffff;
+  font-size: 0.95rem;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #6bcb77;
+}
+
+input::placeholder {
+  color: #a0a0a0;
+}
+
+/* ========================================
+   BUTTONS (Standard Style Guide)
+   ======================================== */
+.btn-primary {
+  background: linear-gradient(135deg, #0f5132 0%, #198754 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.75rem 1.2rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+  background: linear-gradient(135deg, #198754 0%, #28a745 100%);
+}
+
+/* ========================================
+   TABLES (Dark Theme)
+   ======================================== */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+}
+
+thead th {
+  background: linear-gradient(135deg, #0f5132 0%, #198754 100%);
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border: 1px solid #275b48;
+}
+
+tbody td {
+  background: #ffffff !important;
+  color: #000000 !important;
+  padding: 0.5rem 0.5rem;
+  border: 1px solid #cdd2c8;
+  font-weight: 500;
+  font-size: 0.8rem !important;
+  line-height: 1.3;
+}
+
+/* Time columns - smaller font for stacked times */
+tbody td:nth-child(2),
+tbody td:nth-child(3) {
+  font-size: 0.75rem !important;
+  white-space: nowrap;
+}
+
+tbody tr:nth-child(odd) td {
+  background: #ffffff !important;
+}
+
+tbody tr:nth-child(even) td {
+  background: #f5f5f5 !important;
+}
+
+tbody tr:hover td {
+  background: #e8f5e9 !important;
+}
+
+/* ========================================
+   ACTION BUTTONS (Table)
+   ======================================== */
+.actions-btn {
+  display: inline-block;
+  margin-right: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  border-radius: 3px;
+  cursor: pointer;
+  color: white;
+  background-color: #4caf50;
+  border: none;
+  transition: background-color 0.2s;
+}
+
+.actions-btn:hover {
+  background-color: #45a049;
+}
+
+.delete-btn {
+  background: linear-gradient(135deg, #7f152c 0%, #c53045 100%);
+}
+
+.delete-btn:hover {
+  background: linear-gradient(135deg, #c53045 0%, #e9485e 100%);
+}
+
+/* ========================================
+   STATUS BADGES (UI Style Guide)
+   ======================================== */
+.status-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-weight: 500;
+}
+
+.status-badge.present {
+  background: rgba(107, 203, 119, 0.2);
+  color: #6bcb77;
+  border: 1px solid #6bcb77;
+}
+
+.status-badge.absent {
+  background: rgba(255, 107, 107, 0.2);
+  color: #ff6b6b;
+  border: 1px solid #ff6b6b;
+}
+
+.status-badge.late {
+  background: rgba(255, 217, 61, 0.2);
+  color: #ffd93d;
+  border: 1px solid #ffd93d;
+}
+
+.status-badge.wfh {
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+  border: 1px solid #3b82f6;
+}
+
+.status-badge.leave {
+  background: rgba(167, 139, 250, 0.2);
+  color: #a78bfa;
+  border: 1px solid #a78bfa;
+}
+
+/* ========================================
+   MUTED TEXT
+   ======================================== */
+.muted {
+  color: #a0a0a0;
+  font-size: 0.9rem;
+}
+
+/* ========================================
+   MODALS (UI Style Guide)
+   ======================================== */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: auto;
+  background: rgba(13, 27, 14, 0.85);
+  justify-content: center;
+  align-items: center;
+}
+
+.modal.open {
+  display: flex;
+}
+
+.modal-content {
+  background: linear-gradient(135deg, #113d2a 0%, #0d1b0e 100%);
+  border: 1px solid #275b48;
+  border-radius: 12px;
+  margin: auto;
+  padding: 2rem 2.5rem;
+  max-width: 640px;
+  width: 100%;
+  color: #fff;
+  box-shadow: 0 8px 32px rgba(2, 15, 8, 0.45);
+  position: relative;
+}
+
+.modal-content h3 {
+  margin-top: 0;
+  margin-bottom: 1.25rem;
+  font-size: 1.35rem;
+  color: #ffc107;
+}
+
+.close {
+  position: absolute;
+  top: 1.2rem;
+  right: 1.5rem;
+  font-size: 2rem;
+  color: #c53045;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+/* Modal form grid - 2 columns for Add/Edit Attendance */
+.modal .filters-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 600px) {
+  .modal .filters-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Modal form inputs (light theme for better readability) */
+.modal .filters-grid input,
+.modal .filters-grid select,
+.modal .filters-grid textarea {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #f9fafb;
+  color: #1a202c;
+}
+
+.modal .filters-grid input:focus,
+.modal .filters-grid select:focus,
+.modal .filters-grid textarea:focus {
+  outline: none;
+  border-color: #198754;
+}
+
+.modal .filters-grid label {
+  color: #fff;
+}
+
+/* ========================================
+   FORM CONTROLS
+   ======================================== */
+.form-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form-check input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #198754;
+}
+
+.form-check label {
+  color: #fff;
+}
+
+/* Toggle switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 26px;
+}
+
+.switch input {
+  display: none;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #6b7280;
+  transition: 0.2s;
+  border-radius: 26px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.2s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #198754;
+}
+
+input:checked + .slider:before {
+  transform: translateX(22px);
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+@media (max-width: 1024px) {
+  .filters-grid,
+  .filter-bar-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .filters-grid,
+  .filter-bar-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .summary-bar.metrics {
+    flex-direction: column;
+  }
+  
+  .summary-bar.metrics .summary-item {
+    flex: none;
+    width: 100%;
+  }
+  
+  .modal-content {
+    max-width: 98vw;
+    padding: 1.2rem 0.5rem;
+  }
+}
+
+/* ========================================
+   TABLE TEXT OVERRIDE (Maximum Specificity)
+   Ensures table cell text is always black/dark
+   ======================================== */
+#attendance-table tbody td,
+.table-wrapper table tbody td,
+table#attendance-table td,
+table tbody td,
+tbody td,
+td {
+  color: #000000 !important;
+  background-color: #ffffff !important;
+}
+
+#attendance-table tbody tr:nth-child(even) td,
+.table-wrapper table tbody tr:nth-child(even) td,
+table tbody tr:nth-child(even) td {
+  background-color: #f5f5f5 !important;
+}
+
+#attendance-table tbody tr:hover td,
+.table-wrapper table tbody tr:hover td,
+table tbody tr:hover td {
+  background-color: #e8f5e9 !important;
+}
+
+/* Force all text inside table cells to be black */
+table td *,
+table td a,
+table td span,
+table td div,
+table td p {
+  color: #000000 !important;
+}
