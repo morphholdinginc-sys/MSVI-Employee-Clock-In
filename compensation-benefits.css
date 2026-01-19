@@ -1,0 +1,413 @@
+/*
+ * Compensation & Benefits Styles
+ * Based on UI Style Guide - Morph Sagrado Ventures Inc
+ * 
+ * Color Palette (from UI Style Guide):
+ * - Dark Green: #0f5132 (Primary gradient start)
+ * - Medium Green: #198754 (Primary gradient end)
+ * - Light Green: #28a745 (Hover states)
+ * - Background Dark: #0d1b0e (Page background)
+ * - Card Background: #113d2a
+ * - Gold/Yellow: #ffc107 (Highlights)
+ * - Border: #275b48
+ */
+
+/* ========================================
+   FILTER BAR GRID
+   ======================================== */
+.filter-bar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.filter-bar-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+  margin-bottom: 0;
+}
+
+@media (max-width: 900px) {
+  .filter-bar-grid {
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+  }
+}
+
+/* ========================================
+   TABLES (Dark Theme)
+   ======================================== */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin-bottom: 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  color: #000000;
+  font-size: 1rem;
+  margin: 0;
+}
+
+thead {
+  background: linear-gradient(135deg, #0f5132 0%, #198754 100%);
+}
+
+thead th {
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 0.5rem;
+  text-align: left;
+  border-bottom: 2px solid #275b48;
+}
+
+tbody td {
+  color: #000000 !important;
+  background: #ffffff !important;
+  padding: 0.75rem 0.5rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #cdd2c8;
+  font-weight: 500;
+}
+
+tbody tr:nth-child(odd) td {
+  background: #ffffff !important;
+}
+
+tbody tr:nth-child(even) td {
+  background: #f5f5f5 !important;
+}
+
+tbody tr:hover td {
+  background: #e8f5e9 !important;
+}
+
+/* ========================================
+   BUTTONS (Standard Style Guide)
+   ======================================== */
+.btn-primary {
+  background: linear-gradient(135deg, #0f5132 0%, #198754 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.75rem 1.2rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+  background: linear-gradient(135deg, #198754 0%, #28a745 100%);
+}
+
+/* ========================================
+   MODALS (UI Style Guide)
+   ======================================== */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: auto;
+  background: rgba(13, 27, 14, 0.85);
+  justify-content: center;
+  align-items: center;
+}
+
+.modal.open {
+  display: flex;
+}
+
+.modal-content {
+  background: linear-gradient(135deg, #113d2a 0%, #0d1b0e 100%);
+  border: 1px solid #275b48;
+  border-radius: 12px;
+  margin: auto;
+  padding: 2rem 2.5rem;
+  max-width: 640px;
+  width: 100%;
+  color: #fff;
+  box-shadow: 0 8px 32px rgba(2, 15, 8, 0.45);
+  position: relative;
+}
+
+.modal-content h3 {
+  margin-top: 0;
+  margin-bottom: 1.25rem;
+  font-size: 1.35rem;
+  color: #ffc107;
+}
+
+.close {
+  position: absolute;
+  top: 1.2rem;
+  right: 1.5rem;
+  font-size: 2rem;
+  color: #c53045;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+/* ========================================
+   CARDS (Standard UI Style)
+   ======================================== */
+.card {
+  background: linear-gradient(135deg, #1a2a1a 0%, #0d1b0e 100%);
+  border: 1px solid #275b48;
+  border-radius: 8px;
+  padding: 1.25rem 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.card h3 {
+  color: #ffffff;
+  margin: 0 0 1rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+/* ========================================
+   FILTER GRID (Modal)
+   ======================================== */
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  align-items: end;
+}
+
+@media (max-width: 1200px) {
+  .filters-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 800px) {
+  .filters-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ========================================
+   FORM INPUTS (Dark Theme)
+   ======================================== */
+label {
+  color: #e0e0e0;
+  font-size: 0.98rem;
+  margin-bottom: 0.5rem;
+  display: block;
+  padding: 0.5rem 0 0.5rem 0.1rem;
+}
+
+input,
+select,
+textarea {
+  padding: 0.5rem;
+  border: 1px solid #275b48;
+  border-radius: 4px;
+  background: #0d1b0e;
+  color: #fff;
+  width: 100%;
+  margin-top: 0.25rem;
+  font-size: 1rem;
+  max-width: 320px;
+  box-sizing: border-box;
+}
+
+select option {
+  background: #0d1b0e;
+  color: #fff;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #6bcb77;
+}
+
+input::placeholder {
+  color: #a0a0a0;
+}
+
+/* ========================================
+   ACTION BUTTONS (Table)
+   ======================================== */
+.actions-inline {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+}
+
+.actions-btn {
+  display: inline-block;
+  margin-right: 0.25rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  color: white;
+  background: linear-gradient(135deg, #0f5132 0%, #198754 100%);
+  border: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.actions-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, #198754 0%, #28a745 100%);
+}
+
+.delete-btn {
+  background: linear-gradient(135deg, #7f152c 0%, #c53045 100%);
+}
+
+.delete-btn:hover {
+  background: linear-gradient(135deg, #c53045 0%, #e9485e 100%);
+}
+
+/* ========================================
+   STATUS BADGES (UI Style Guide)
+   ======================================== */
+.status-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-weight: 500;
+}
+
+.status-badge.active {
+  background: rgba(107, 203, 119, 0.2);
+  color: #6bcb77;
+  border: 1px solid #6bcb77;
+}
+
+.status-badge.inactive {
+  background: rgba(255, 107, 107, 0.2);
+  color: #ff6b6b;
+  border: 1px solid #ff6b6b;
+}
+
+/* ========================================
+   MUTED TEXT
+   ======================================== */
+.muted {
+  color: #a0a0a0;
+  font-size: 0.9rem;
+}
+
+/* ========================================
+   SUMMARY BAR METRICS
+   ======================================== */
+.summary-bar.metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.summary-item {
+  min-width: 180px;
+  background: linear-gradient(135deg, #1a2a1a 0%, #0d1b0e 100%);
+  border: 1px solid #275b48;
+  border-radius: 8px;
+  padding: 1rem 2rem;
+  text-align: center;
+}
+
+.summary-item h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  color: #e0e0e0;
+}
+
+.summary-item .value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #6bcb77;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+@media (max-width: 900px) {
+  .modal-content {
+    max-width: 98vw;
+    padding: 1.2rem 0.5rem;
+  }
+  
+  .filters-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ========================================
+   TABLE TEXT OVERRIDE (Maximum Specificity)
+   Ensures table cell text is always black/dark
+   ======================================== */
+#comp-table tbody td,
+.table-wrapper table tbody td,
+table#comp-table td,
+table tbody td,
+tbody td,
+td {
+  color: #000000 !important;
+  background-color: #ffffff !important;
+}
+
+#comp-table tbody tr:nth-child(even) td,
+.table-wrapper table tbody tr:nth-child(even) td,
+table tbody tr:nth-child(even) td {
+  background-color: #f5f5f5 !important;
+}
+
+#comp-table tbody tr:hover td,
+.table-wrapper table tbody tr:hover td,
+table tbody tr:hover td {
+  background-color: #e8f5e9 !important;
+}
+
+/* Force all text inside table cells to be black */
+table td *,
+table td a,
+table td span,
+table td div,
+table td p {
+  color: #000000 !important;
+}
+
+/* ========================================
+   LOADING SPINNER ANIMATION
+   ======================================== */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

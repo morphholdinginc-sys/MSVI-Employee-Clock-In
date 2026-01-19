@@ -15,6 +15,62 @@
 (function() {
   'use strict';
 
+  // Helper function to parse coreWorkingHours and get schedule span in hours
+  // Format: "8:00 AM - 6:00 PM" returns 10 (hours span)
+  function getScheduleSpanHours(coreWorkingHours) {
+    if (!coreWorkingHours || coreWorkingHours === 'N/A') return null;
+    
+    const parseTo24hr = (timeStr) => {
+      const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+      if (!match) return null;
+      let [, hours, minutes, period] = match;
+      let h = parseInt(hours, 10);
+      if (period.toUpperCase() === 'PM' && h !== 12) h += 12;
+      if (period.toUpperCase() === 'AM' && h === 12) h = 0;
+      return h * 60 + parseInt(minutes, 10);
+    };
+    
+    const parts = coreWorkingHours.split('-').map(s => s.trim());
+    if (parts.length !== 2) return null;
+    
+    const startMinutes = parseTo24hr(parts[0]);
+    const endMinutes = parseTo24hr(parts[1]);
+    
+    if (startMinutes === null || endMinutes === null) return null;
+    
+    return (endMinutes - startMinutes) / 60;
+  }
+
+  // Helper function to get display hours with lunch adjustment
+  // For employees with 10hr schedule (8AM-6PM) who work 9 actual hours, show 10 hours
+  function getDisplayHours(record, employee) {
+    const fields = record.fields || record;
+    const totalHoursWorked = Number(fields.TotalHoursWorked || fields.totalHoursWorked) || 0;
+    
+    // Check if both AM and PM sessions are worked
+    const timeInAM = fields.TimeInAM || fields.timeInAM;
+    const timeOutAM = fields.TimeOutAM || fields.timeOutAM;
+    const timeInPM = fields.TimeInPM || fields.timeInPM;
+    const timeOutPM = fields.TimeOutPM || fields.timeOutPM;
+    
+    const hasAM = !!(timeInAM && timeOutAM);
+    const hasPM = !!(timeInPM && timeOutPM);
+    
+    if (!hasAM || !hasPM) {
+      return totalHoursWorked;
+    }
+    
+    // Get schedule span from coreWorkingHours
+    const scheduleSpan = getScheduleSpanHours(employee?.coreWorkingHours);
+    
+    // If schedule is 10 hours and actual worked is ~9 hours, add 1 hour for lunch
+    if (scheduleSpan === 10 && totalHoursWorked >= 8.9 && totalHoursWorked <= 9.1) {
+      return totalHoursWorked + 1; // Add 1 hour lunch
+    }
+    
+    return totalHoursWorked;
+  }
+
   // Module state
   let allEmployees = [];
   let selectedEmployee = null;
@@ -1257,6 +1313,7 @@
           <h3 class="modal-employee-name">${employeeName}</h3>
           <div class="modal-employee-meta">
             <span>ID: ${employeeId}</span>
+            <span>🏢 ${searchedEmployee?.department || 'N/A'}</span>
           </div>
         </div>
       `;
@@ -1614,8 +1671,16 @@
     const fromInput = document.getElementById('modalFromDate');
     const toInput = document.getElementById('modalToDate');
     
-    if (fromInput) fromInput.value = firstDay.toISOString().split('T')[0];
-    if (toInput) toInput.value = lastDay.toISOString().split('T')[0];
+    // Format dates manually to avoid timezone issues with toISOString()
+    const formatDate = (d) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+    
+    if (fromInput) fromInput.value = formatDate(firstDay);
+    if (toInput) toInput.value = formatDate(lastDay);
   }
 
   /**
@@ -1681,7 +1746,7 @@
     searchedAttendance.forEach(record => {
       if (record.timeInAM || record.timeInPM) presentDays++;
       if (record.timeInAM && isLate(record.timeInAM)) lateDays++;
-      totalHours += parseFloat(record.totalHoursWorked) || 0;
+      totalHours += getDisplayHours(record, searchedEmployee);
     });
     
     // Render summary
@@ -1709,7 +1774,7 @@
           <td>${formatTime12Hour(record.timeOutAM)}</td>
           <td>${formatTime12Hour(record.timeInPM)}</td>
           <td>${formatTime12Hour(record.timeOutPM)}</td>
-          <td>${formatHoursMinutes(record.totalHoursWorked)}</td>
+          <td>${formatHoursMinutes(getDisplayHours(record, searchedEmployee))}</td>
           <td>${getAttendanceStatusBadge(record, searchedEmployee)}</td>
         </tr>
       `;
@@ -1808,14 +1873,8 @@
 
   /**
    * Get attendance status badge HTML
-   * Simplified status logic:
-   * - Working: Currently logged in (has time in, no time out for current period)
-   * - On Break: Morning out done, afternoon not started
-   * - Present: Has completed all time entries for the day
-   * - Half Day: Only morning OR only afternoon completed (with enough hours)
-   * - Short Hours: Some work but not enough for half day
-   * - Invalid: Too short to count (e.g., less than 30 minutes)
-   * - Incomplete: Missing some entries (past records)
+   * Uses the same logic as attendance.js
+   * For status calculation, use display hours (with lunch adjustment for 10hr schedule employees)
    */
   function getAttendanceStatusBadge(record, employee = null) {
     const fields = record.fields || record;
@@ -1826,23 +1885,8 @@
     const timeInPM = fields.TimeInPM || fields.timeInPM;
     const timeOutPM = fields.TimeOutPM || fields.timeOutPM;
     
-    // Calculate total hours worked
-    let totalMinutes = 0;
-    if (timeInAM && timeOutAM) {
-      const inAM = parseTimeToMinutes(timeInAM);
-      const outAM = parseTimeToMinutes(timeOutAM);
-      if (inAM !== Infinity && outAM !== Infinity) {
-        totalMinutes += Math.max(0, outAM - inAM);
-      }
-    }
-    if (timeInPM && timeOutPM) {
-      const inPM = parseTimeToMinutes(timeInPM);
-      const outPM = parseTimeToMinutes(timeOutPM);
-      if (inPM !== Infinity && outPM !== Infinity) {
-        totalMinutes += Math.max(0, outPM - inPM);
-      }
-    }
-    const totalHours = totalMinutes / 60;
+    // Use getDisplayHours which includes lunch adjustment for 10hr schedule employees
+    const totalHours = getDisplayHours(record, employee);
     
     // Get employee's standard hours for thresholds
     const standardWorkweekHours = employee?.standardWorkweekHours || 40;
@@ -1850,7 +1894,7 @@
     const tol = 0.01;
     
     // Minimum hours thresholds
-    const minHoursForHalfDay = dailyStd / 2 * 0.75; // At least 75% of half day (e.g., 3 hours for 8-hour day)
+    const minHoursForHalfDay = dailyStd / 2 * 0.75; // At least 75% of half day
     const minHoursForValid = 0.5; // At least 30 minutes to count as valid work
     
     // Check if record is from today
@@ -1863,6 +1907,9 @@
     if (leaveType && leaveType !== 'None' && leaveType !== '') {
       return '<span class="status-badge status-leave">On Leave</span>';
     }
+    
+    const hasAM = !!(timeInAM && timeOutAM);
+    const hasPM = !!(timeInPM && timeOutPM);
     
     // For TODAY's records - show real-time status
     if (isToday) {
@@ -1888,7 +1935,6 @@
       
       // Only afternoon done (half day PM)
       if (!timeInAM && !timeOutAM && timeInPM && timeOutPM) {
-        // Check if enough hours for half day
         if (totalHours < minHoursForValid) {
           return '<span class="status-badge status-invalid">Invalid</span>';
         } else if (totalHours < minHoursForHalfDay) {
@@ -1905,16 +1951,13 @@
       return '<span class="status-badge status-absent">No Record</span>';
     }
     
-    // For PAST records
-    const hasAM = timeInAM && timeOutAM;
-    const hasPM = timeInPM && timeOutPM;
-    
+    // For PAST records - use same logic as attendance.js
     // No entries at all
     if (!hasAM && !hasPM && !timeInAM && !timeOutAM && !timeInPM && !timeOutPM) {
       return '<span class="status-badge status-absent">Absent</span>';
     }
     
-    // Both halves complete - check total hours
+    // Both halves complete - check total hours (uses stored totalHoursWorked which includes lunch)
     if (hasAM && hasPM) {
       if (totalHours < (dailyStd - tol)) {
         return '<span class="status-badge status-short">Short Hours</span>';

@@ -65,7 +65,8 @@
       department: r.fields.Department || '',
       status: r.fields.Status || 'Active',
       standardWorkweekHours: Number(r.fields.StandardWorkweekHours) || 40,
-      rateType: r.fields.RateType || ''
+      rateType: r.fields.RateType || '',
+      coreWorkingHours: r.fields.CoreWorkingHours || ''
     })).filter(e => e.status === 'Active');
   }
 
