@@ -118,7 +118,13 @@
    * Get today's attendance for all employees
    */
   async function getTodayAttendance() {
-    const today = new Date().toISOString().split('T')[0];
+    // Use local date instead of UTC to handle timezone correctly
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const today = `${year}-${month}-${day}`;
+    
     const filterFormula = `DATETIME_FORMAT({Date}, 'YYYY-MM-DD')='${today}'`;
     
     let records = [];
