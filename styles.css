@@ -3656,6 +3656,13 @@ kbd {
   transform: scale(0.98);
 }
 
+.in-app-note {
+  color: #a0c8b5;
+  font-size: 0.9rem;
+  margin: 1rem 0 0;
+  font-style: italic;
+}
+
 .in-app-browser-modal .btn-primary {
   width: 100%;
   padding: 1rem 2rem;
