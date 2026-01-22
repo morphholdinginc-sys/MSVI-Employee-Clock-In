@@ -82,10 +82,71 @@
   let isSaving = false; // Prevent multiple saves
 
   /**
+   * Detect if running in an in-app browser (Facebook, Messenger, Instagram, etc.)
+   * @returns {object} { isInApp: boolean, browser: string }
+   */
+  function detectInAppBrowser() {
+    const ua = navigator.userAgent || navigator.vendor || window.opera;
+    
+    const inAppBrowsers = [
+      { name: 'Facebook Messenger', patterns: ['FBAN', 'FBAV', 'Messenger'] },
+      { name: 'Facebook', patterns: ['FBAN', 'FBAV'] },
+      { name: 'Instagram', patterns: ['Instagram'] },
+      { name: 'Twitter', patterns: ['Twitter'] },
+      { name: 'TikTok', patterns: ['TikTok', 'BytedanceWebview'] },
+      { name: 'Snapchat', patterns: ['Snapchat'] },
+      { name: 'LinkedIn', patterns: ['LinkedInApp'] },
+      { name: 'Pinterest', patterns: ['Pinterest'] },
+      { name: 'Line', patterns: ['Line/'] },
+      { name: 'WeChat', patterns: ['MicroMessenger'] },
+      { name: 'Viber', patterns: ['Viber'] },
+      { name: 'Telegram', patterns: ['TelegramBot'] },
+    ];
+    
+    for (const browser of inAppBrowsers) {
+      for (const pattern of browser.patterns) {
+        if (ua.includes(pattern)) {
+          return { isInApp: true, browser: browser.name };
+        }
+      }
+    }
+    
+    return { isInApp: false, browser: null };
+  }
+
+  /**
+   * Show in-app browser warning modal
+   */
+  function showInAppBrowserWarning(browserName) {
+    const modal = document.getElementById('inAppBrowserModal');
+    const browserNameEl = document.getElementById('inAppBrowserName');
+    const urlEl = document.getElementById('currentPageUrl');
+    
+    if (modal && browserNameEl) {
+      browserNameEl.textContent = browserName;
+      if (urlEl) {
+        urlEl.textContent = window.location.href;
+      }
+      modal.style.display = 'flex';
+      modal.classList.add('show');
+      
+      // Disable scrolling on background
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  /**
    * Initialize the Clock In module
    */
   async function init() {
     console.log('[Clock In] Initializing module...');
+    
+    // Check for in-app browser
+    const { isInApp, browser } = detectInAppBrowser();
+    if (isInApp) {
+      console.warn('[Clock In] Detected in-app browser:', browser);
+      showInAppBrowserWarning(browser);
+    }
     
     try {
       // Load employees for autocomplete
@@ -282,6 +343,23 @@
     document.getElementById('btnCloseSuccess')?.addEventListener('click', closeSuccessModal);
     document.getElementById('successModal')?.addEventListener('click', (e) => {
       if (e.target.id === 'successModal') closeSuccessModal();
+    });
+    
+    // In-app browser warning modal - Open in Browser button
+    document.getElementById('btnOpenInBrowser')?.addEventListener('click', () => {
+      const url = window.location.href;
+      
+      // Try different methods to open in external browser
+      // Method 1: Intent URL for Android
+      const intentUrl = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;end';
+      
+      // Method 2: Direct window.open with target
+      const newWindow = window.open(url, '_system');
+      
+      if (!newWindow) {
+        // Fallback: try location change
+        window.location.href = url;
+      }
     });
     
     // Modal controls

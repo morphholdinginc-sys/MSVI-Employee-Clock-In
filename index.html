@@ -478,6 +478,23 @@
         <button class="btn-primary" id="btnCloseSuccess">OK</button>
       </div>
     </div>
+    
+    <!-- In-App Browser Warning Modal -->
+    <div id="inAppBrowserModal" class="modal" style="display: none;">
+      <div class="modal-content in-app-browser-modal">
+        <div class="in-app-warning-icon">&#x1F6AB;</div>
+        <h2 class="in-app-warning-title">Browser Not Supported</h2>
+        <p class="in-app-warning-message">
+          You're using <strong id="inAppBrowserName">an in-app browser</strong> which is not supported.
+        </p>
+        <p class="in-app-warning-instruction">
+          Please open this page in your default browser to continue.
+        </p>
+        <button class="btn-open-browser" id="btnOpenInBrowser">
+          <span>&#x1F310;</span> Open in Browser
+        </button>
+      </div>
+    </div>
   </div>
   
   <!-- JavaScript -->
