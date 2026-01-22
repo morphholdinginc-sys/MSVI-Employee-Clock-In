@@ -119,12 +119,9 @@
    */
   function showInAppBrowserWarning(browserName) {
     const modal = document.getElementById('inAppBrowserModal');
-    const browserNameEl = document.getElementById('inAppBrowserName');
     const openLink = document.getElementById('openBrowserLink');
     
-    if (modal && browserNameEl) {
-      browserNameEl.textContent = browserName;
-      
+    if (modal) {
       // Set the link to open in external browser
       if (openLink) {
         const url = window.location.href;
