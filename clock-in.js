@@ -345,23 +345,6 @@
       if (e.target.id === 'successModal') closeSuccessModal();
     });
     
-    // In-app browser warning modal - Open in Browser button
-    document.getElementById('btnOpenInBrowser')?.addEventListener('click', () => {
-      const url = window.location.href;
-      
-      // Try different methods to open in external browser
-      // Method 1: Intent URL for Android
-      const intentUrl = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;end';
-      
-      // Method 2: Direct window.open with target
-      const newWindow = window.open(url, '_system');
-      
-      if (!newWindow) {
-        // Fallback: try location change
-        window.location.href = url;
-      }
-    });
-    
     // Modal controls
     document.getElementById('closeClockModal')?.addEventListener('click', closeClockModal);
     document.getElementById('clockInModal')?.addEventListener('click', (e) => {

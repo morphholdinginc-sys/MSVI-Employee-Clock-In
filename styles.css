@@ -3626,47 +3626,51 @@ kbd {
   color: #ffc107;
 }
 
-.in-app-warning-instruction {
-  color: #a0c8b5;
-  font-size: 0.95rem;
-  margin: 0 0 1rem;
-}
-
-.in-app-steps {
+.in-app-visual-steps {
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-  text-align: left;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
 }
 
-.in-app-step {
+.visual-step {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 0;
-  color: #e6fff1;
-  font-size: 0.95rem;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(40, 167, 69, 0.15);
+  border-radius: 12px;
+  border: 2px solid rgba(40, 167, 69, 0.3);
 }
 
-.in-app-step:not(:last-child) {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.in-app-step .step-icon {
-  font-size: 1.25rem;
-  width: 32px;
-  height: 32px;
-  background: rgba(255, 193, 7, 0.2);
-  border-radius: 50%;
+.visual-step-icon {
+  font-size: 2.5rem;
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
-.in-app-step strong {
+.visual-step-text {
+  font-size: 1.1rem;
+  color: #e6fff1;
+  text-align: left;
+}
+
+.visual-step-text strong {
   color: #66ffb2;
+  font-size: 1.2rem;
+}
+
+.visual-step-arrow {
+  font-size: 2rem;
+  color: #ffc107;
+  text-align: center;
+  padding: 0.5rem 0;
 }
 
 .btn-open-browser {

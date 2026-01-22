@@ -483,16 +483,21 @@
     <div id="inAppBrowserModal" class="modal" style="display: none;">
       <div class="modal-content in-app-browser-modal">
         <div class="in-app-warning-icon">&#x1F6AB;</div>
-        <h2 class="in-app-warning-title">Browser Not Supported</h2>
+        <h2 class="in-app-warning-title">Open in Browser</h2>
         <p class="in-app-warning-message">
-          You're using <strong id="inAppBrowserName">an in-app browser</strong> which is not supported.
+          This app doesn't work in <strong id="inAppBrowserName">this browser</strong>.
         </p>
-        <p class="in-app-warning-instruction">
-          Please open this page in your default browser to continue.
-        </p>
-        <button class="btn-open-browser" id="btnOpenInBrowser">
-          <span>&#x1F310;</span> Open in Browser
-        </button>
+        <div class="in-app-visual-steps">
+          <div class="visual-step">
+            <div class="visual-step-icon">&#x22EE;</div>
+            <div class="visual-step-text">Tap the <strong>3 dots</strong> menu</div>
+          </div>
+          <div class="visual-step-arrow">&#x2193;</div>
+          <div class="visual-step">
+            <div class="visual-step-icon">&#x1F310;</div>
+            <div class="visual-step-text">Tap <strong>"Open in Browser"</strong></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
