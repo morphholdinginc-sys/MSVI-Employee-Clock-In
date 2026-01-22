@@ -2117,18 +2117,18 @@ button {
 /* Modal Suggestions Dropdown */
 .modal-suggestions-dropdown {
   position: absolute;
-  top: 100%;
+  bottom: 100%;
   left: 0;
   right: 0;
-  margin-top: 8px;
-  background: linear-gradient(180deg, #1a3d2e 0%, #0d1b0e 100%);
+  margin-bottom: 8px;
+  background: linear-gradient(180deg, #0d1b0e 0%, #1a3d2e 100%);
   border: 2px solid #28a745;
   border-radius: 12px;
   max-height: 280px;
   overflow-y: auto;
   z-index: 10002;
   display: none;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 -16px 48px rgba(0, 0, 0, 0.7);
 }
 
 .modal-suggestions-dropdown.active {
