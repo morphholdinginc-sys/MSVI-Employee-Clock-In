@@ -317,14 +317,15 @@
       clockInSearch.addEventListener('keydown', handleClockInKeydown);
       clockInSearch.addEventListener('focus', handleClockInSearch);
       
-      // On mobile, scroll to show Save button when input is focused
+      // On mobile, scroll to keep input and dropdown visible when keyboard appears
       clockInSearch.addEventListener('focus', () => {
         if (window.innerWidth <= 768) {
           // Small delay to wait for keyboard to appear
           setTimeout(() => {
-            const saveBtn = document.getElementById('btnSaveClockRecord');
-            if (saveBtn) {
-              saveBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const modalContent = document.querySelector('#clockInModal .clock-modal');
+            if (modalContent) {
+              // Scroll the modal to top so dropdown (above input) and content are visible
+              modalContent.scrollTop = 0;
             }
           }, 300);
         }
