@@ -120,13 +120,28 @@
   function showInAppBrowserWarning(browserName) {
     const modal = document.getElementById('inAppBrowserModal');
     const browserNameEl = document.getElementById('inAppBrowserName');
-    const urlEl = document.getElementById('currentPageUrl');
+    const openLink = document.getElementById('openBrowserLink');
     
     if (modal && browserNameEl) {
       browserNameEl.textContent = browserName;
-      if (urlEl) {
-        urlEl.textContent = window.location.href;
+      
+      // Set the link to open in external browser
+      if (openLink) {
+        const url = window.location.href;
+        const isAndroid = /android/i.test(navigator.userAgent);
+        const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+        
+        if (isAndroid) {
+          // Android: Use intent URL to force external browser
+          openLink.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;action=android.intent.action.VIEW;end';
+        } else if (isIOS) {
+          // iOS: Try x-safari URL scheme
+          openLink.href = 'x-safari-' + url;
+        } else {
+          openLink.href = url;
+        }
       }
+      
       modal.style.display = 'flex';
       modal.classList.add('show');
       

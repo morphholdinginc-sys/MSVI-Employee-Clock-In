@@ -3626,57 +3626,15 @@ kbd {
   color: #ffc107;
 }
 
-.in-app-visual-steps {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
-  padding: 1.5rem;
-  margin-top: 1.5rem;
-}
-
-.visual-step {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background: rgba(40, 167, 69, 0.15);
-  border-radius: 12px;
-  border: 2px solid rgba(40, 167, 69, 0.3);
-}
-
-.visual-step-icon {
-  font-size: 2.5rem;
-  width: 60px;
-  height: 60px;
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-  border-radius: 12px;
+.btn-open-browser {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-}
-
-.visual-step-text {
-  font-size: 1.1rem;
-  color: #e6fff1;
-  text-align: left;
-}
-
-.visual-step-text strong {
-  color: #66ffb2;
-  font-size: 1.2rem;
-}
-
-.visual-step-arrow {
-  font-size: 2rem;
-  color: #ffc107;
-  text-align: center;
-  padding: 0.5rem 0;
-}
-
-.btn-open-browser {
+  gap: 0.75rem;
   width: 100%;
   padding: 1.25rem 2rem;
-  font-size: 1.2rem;
+  margin-top: 1.5rem;
+  font-size: 1.3rem;
   font-weight: 700;
   background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
   color: white;
@@ -3684,17 +3642,14 @@ kbd {
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
   box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+  text-decoration: none;
 }
 
 .btn-open-browser:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(40, 167, 69, 0.5);
+  color: white;
 }
 
 .btn-open-browser:active {
