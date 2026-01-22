@@ -156,11 +156,14 @@
   async function init() {
     console.log('[Clock In] Initializing module...');
     
-    // Check for in-app browser
+    // Check for in-app browser (or test mode with ?test=inapp)
+    const urlParams = new URLSearchParams(window.location.search);
+    const testInApp = urlParams.get('test') === 'inapp';
+    
     const { isInApp, browser } = detectInAppBrowser();
-    if (isInApp) {
-      console.warn('[Clock In] Detected in-app browser:', browser);
-      showInAppBrowserWarning(browser);
+    if (isInApp || testInApp) {
+      console.warn('[Clock In] Detected in-app browser:', browser || 'Test Mode');
+      showInAppBrowserWarning(browser || 'Test Mode');
     }
     
     try {
