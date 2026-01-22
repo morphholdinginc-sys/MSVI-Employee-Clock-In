@@ -2761,32 +2761,6 @@ button {
     padding: 1.5rem;
   }
   
-  /* Clock Modal - Mobile: Reorder elements so Save button is at top */
-  .employee-search-container {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .employee-search-container .search-prompt {
-    order: 2;
-  }
-  
-  .employee-search-container .modal-search-wrapper {
-    order: 3;
-  }
-  
-  .employee-search-container .selected-employee-display {
-    order: 1;
-    margin-top: 0;
-    margin-bottom: 0.75rem;
-  }
-  
-  .employee-search-container .clock-save-btn {
-    order: 0;
-    margin-top: 0;
-    margin-bottom: 1rem;
-  }
-  
   /* Search Results Modal - Mobile */
   .search-results-modal {
     width: 95%;
