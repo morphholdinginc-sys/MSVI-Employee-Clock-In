@@ -322,9 +322,9 @@
         if (window.innerWidth <= 768) {
           // Small delay to wait for keyboard to appear
           setTimeout(() => {
-            const saveBtn = document.getElementById('btnSaveClockRecord');
-            if (saveBtn) {
-              saveBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            const selectedDisplay = document.getElementById('selectedEmployeeDisplay');
+            if (selectedDisplay) {
+              selectedDisplay.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
           }, 300);
         }
