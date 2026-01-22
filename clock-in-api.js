@@ -167,6 +167,172 @@
   }
 
   /**
+   * Parse time string (HH:MM or HH:MM AM/PM) to minutes since midnight
+   * @param {string} timeStr - Time string
+   * @returns {number|null} - Minutes since midnight or null if invalid
+   */
+  function parseTimeToMinutes(timeStr) {
+    if (!timeStr) return null;
+    
+    // Handle 12-hour format (e.g., "07:36 AM")
+    const match12 = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (match12) {
+      let hours = parseInt(match12[1], 10);
+      const minutes = parseInt(match12[2], 10);
+      const period = match12[3].toUpperCase();
+      
+      if (period === 'AM' && hours === 12) hours = 0;
+      else if (period === 'PM' && hours !== 12) hours += 12;
+      
+      return hours * 60 + minutes;
+    }
+    
+    // Handle 24-hour format (e.g., "07:36")
+    const match24 = timeStr.match(/^(\d{1,2}):(\d{2})$/);
+    if (match24) {
+      const hours = parseInt(match24[1], 10);
+      const minutes = parseInt(match24[2], 10);
+      return hours * 60 + minutes;
+    }
+    
+    return null;
+  }
+
+  /**
+   * Calculate total hours worked from time entries
+   * @param {object} record - Object with TimeInAM, TimeOutAM, TimeInPM, TimeOutPM
+   * @returns {number} - Total hours worked
+   */
+  function calculateTotalHours(record) {
+    let totalMinutes = 0;
+    
+    // Calculate AM hours
+    const inAM = parseTimeToMinutes(record.TimeInAM);
+    const outAM = parseTimeToMinutes(record.TimeOutAM);
+    if (inAM !== null && outAM !== null && outAM > inAM) {
+      totalMinutes += (outAM - inAM);
+    }
+    
+    // Calculate PM hours
+    const inPM = parseTimeToMinutes(record.TimeInPM);
+    const outPM = parseTimeToMinutes(record.TimeOutPM);
+    if (inPM !== null && outPM !== null && outPM > inPM) {
+      totalMinutes += (outPM - inPM);
+    }
+    
+    return totalMinutes / 60;
+  }
+
+  /**
+   * Get employee data by ID for overtime calculations
+   * @param {string} employeeId - Employee ID
+   * @returns {object|null} - Employee data
+   */
+  async function getEmployeeById(employeeId) {
+    const url = new URL(getEmployeeTableUrl());
+    url.searchParams.set('filterByFormula', `{EmployeeId}='${employeeId}'`);
+    url.searchParams.set('maxRecords', '1');
+    
+    const res = await fetch(url, { headers: headers() });
+    const data = await res.json();
+    
+    if (data.records && data.records.length > 0) {
+      const r = data.records[0];
+      return {
+        baseSalary: Number(r.fields.BaseSalary) || 0,
+        standardWorkweekHours: Number(r.fields.StandardWorkweekHours) || 40,
+        rateType: r.fields.RateType || '',
+        employmentType: r.fields.EmploymentType || r.fields.Type || ''
+      };
+    }
+    return null;
+  }
+
+  /**
+   * Check if employee is fixed rate (no overtime pay)
+   * @param {object} emp - Employee data
+   * @returns {boolean} - True if fixed rate
+   */
+  function isFixedRate(emp) {
+    if (!emp) return false;
+    const rateType = (emp.rateType || '').toLowerCase();
+    const empType = (emp.employmentType || '').toLowerCase();
+    return rateType.includes('fixed') || 
+           rateType.includes('monthly') || 
+           rateType.includes('salary') || 
+           empType.includes('fixed');
+  }
+
+  /**
+   * Calculate hourly rate from employee data
+   * @param {object} emp - Employee data
+   * @returns {number} - Hourly rate
+   */
+  function calculateHourlyRate(emp) {
+    const base = emp?.baseSalary || 0;
+    if (!base) return 0;
+    const standard = emp?.standardWorkweekHours || 40;
+    const daily = standard / 7;
+    const dailyRate = base / 30;
+    return dailyRate / daily;
+  }
+
+  /**
+   * Calculate overtime fields based on total hours and employee data
+   * Handles FIXED vs Time-based rate types:
+   * - Fixed Rate: OvertimeHours = 0, OverTimePay = 0 (regardless of hours worked)
+   * - Time-based: Calculate overtime for hours exceeding daily standard
+   * 
+   * @param {number} totalHours - Total hours worked
+   * @param {string} employeeId - Employee ID for fetching rate data
+   * @returns {object} - { TotalHoursWorked, OvertimeHours, OverTimePay }
+   */
+  async function calculateOvertimeFields(totalHours, employeeId) {
+    const result = {
+      TotalHoursWorked: Math.round(totalHours * 100) / 100,
+      OvertimeHours: 0,
+      OverTimePay: 0
+    };
+    
+    try {
+      const employee = await getEmployeeById(employeeId);
+      
+      // Check if employee is Fixed rate type
+      const isFixed = isFixedRate(employee);
+      
+      // Fixed rate employees: no overtime hours or pay
+      // This handles:
+      // - "Fix with 10hrs with actual of 9hrs" - still no OT
+      // - "Fix with 8hrs of work" - no OT
+      // - "Fix with 8hrs work only" - no OT
+      if (isFixed) {
+        // For fixed rate, only store TotalHoursWorked
+        // OvertimeHours and OverTimePay remain 0
+        return result;
+      }
+      
+      // Time-based employees: calculate overtime
+      const standardDailyHours = employee ? (employee.standardWorkweekHours / 7) : 8;
+      
+      // Calculate overtime hours (only hours beyond daily standard)
+      const overtimeHours = Math.max(0, totalHours - standardDailyHours);
+      result.OvertimeHours = Math.round(overtimeHours * 100) / 100;
+      
+      // Calculate overtime pay for time-based employees
+      if (employee && employee.baseSalary > 0 && overtimeHours > 0) {
+        const hourlyRate = calculateHourlyRate(employee);
+        result.OverTimePay = Math.round(overtimeHours * hourlyRate * 1.25 * 100) / 100;
+      }
+    } catch (err) {
+      console.error('[Clock-In API] Error calculating overtime:', err);
+      // On error, default to storing only total hours (safe default)
+      // Don't calculate overtime without employee data
+    }
+    
+    return result;
+  }
+
+  /**
    * Create a new attendance record
    */
   async function createAttendanceRecord(employeeId, date, actionType, timeValue) {
@@ -175,6 +341,16 @@
       Date: date,
       [actionType]: timeValue
     };
+    
+    // If clocking out, calculate total hours (for a new record, this is rare but handle it)
+    if (actionType === 'TimeOutAM' || actionType === 'TimeOutPM') {
+      const record = { [actionType]: timeValue };
+      const totalHours = calculateTotalHours(record);
+      if (totalHours > 0) {
+        const overtimeFields = await calculateOvertimeFields(totalHours, employeeId);
+        Object.assign(fields, overtimeFields);
+      }
+    }
     
     const response = await fetch(getAttendanceTableUrl(), {
       method: 'POST',
@@ -192,11 +368,47 @@
 
   /**
    * Update an existing attendance record
+   * @param {string} recordId - Airtable record ID
+   * @param {string} actionType - Field to update (TimeInAM, TimeOutAM, TimeInPM, TimeOutPM)
+   * @param {string} timeValue - Time value
+   * @param {object} existingFields - Optional existing record fields for calculation
    */
-  async function updateAttendanceRecord(recordId, actionType, timeValue) {
+  async function updateAttendanceRecord(recordId, actionType, timeValue, existingFields = null) {
     const fields = {
       [actionType]: timeValue
     };
+    
+    // If clocking out, calculate total hours
+    if (actionType === 'TimeOutAM' || actionType === 'TimeOutPM') {
+      // If we don't have existing fields, fetch them
+      let currentRecord = existingFields;
+      if (!currentRecord) {
+        try {
+          const res = await fetch(`${getAttendanceTableUrl()}/${recordId}`, { headers: headers() });
+          const data = await res.json();
+          currentRecord = data.fields || {};
+        } catch (err) {
+          console.error('[Clock-In API] Error fetching record for calculation:', err);
+          currentRecord = {};
+        }
+      }
+      
+      // Build complete record with new time value
+      const fullRecord = {
+        TimeInAM: currentRecord.TimeInAM || null,
+        TimeOutAM: currentRecord.TimeOutAM || null,
+        TimeInPM: currentRecord.TimeInPM || null,
+        TimeOutPM: currentRecord.TimeOutPM || null,
+        [actionType]: timeValue
+      };
+      
+      const totalHours = calculateTotalHours(fullRecord);
+      if (totalHours > 0) {
+        const employeeId = currentRecord.EmployeeId;
+        const overtimeFields = await calculateOvertimeFields(totalHours, employeeId);
+        Object.assign(fields, overtimeFields);
+      }
+    }
     
     const response = await fetch(`${getAttendanceTableUrl()}/${recordId}`, {
       method: 'PATCH',
