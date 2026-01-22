@@ -316,6 +316,19 @@
       clockInSearch.addEventListener('input', handleClockInSearch);
       clockInSearch.addEventListener('keydown', handleClockInKeydown);
       clockInSearch.addEventListener('focus', handleClockInSearch);
+      
+      // On mobile, scroll to show Save button when input is focused
+      clockInSearch.addEventListener('focus', () => {
+        if (window.innerWidth <= 768) {
+          // Small delay to wait for keyboard to appear
+          setTimeout(() => {
+            const saveBtn = document.getElementById('btnSaveClockRecord');
+            if (saveBtn) {
+              saveBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+          }, 300);
+        }
+      });
     }
     
     // Attendance search
