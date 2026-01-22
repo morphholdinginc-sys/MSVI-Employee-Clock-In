@@ -956,6 +956,15 @@
    * Handle employee search input in clock modal
    */
   function handleClockInSearch(e) {
+    // Track input timing for barcode scanner detection
+    const now = Date.now();
+    if (now - lastInputTime < 100) {
+      inputBuffer += e.data || '';
+    } else {
+      inputBuffer = e.data || '';
+    }
+    lastInputTime = now;
+    
     const searchValue = e.target.value.toLowerCase().trim();
     const searchNormalized = normalizeEmployeeId(e.target.value.trim());
     const suggestionsContainer = document.getElementById('clockInSuggestions');
@@ -1037,9 +1046,26 @@
     return id.toLowerCase().replace(/[-\s]/g, '');
   }
 
+  // Track input timing for barcode scanner detection
+  let lastInputTime = 0;
+  let inputBuffer = '';
+  
+  /**
+   * Check if input appears to be from a barcode scanner
+   * Barcode scanners input very fast and usually input Employee ID format
+   */
+  function isBarcodeInput(value) {
+    const timeSinceLastInput = Date.now() - lastInputTime;
+    // Barcode scanner: fast input (< 100ms between chars) and looks like an ID
+    const looksLikeId = /^[A-Za-z]{2,4}[-]?\d{2,5}$/i.test(value.trim());
+    const isFastInput = timeSinceLastInput < 100 && inputBuffer.length > 3;
+    return looksLikeId || isFastInput;
+  }
+
   /**
    * Handle Enter key in clock modal
    * Optimized for barcode scanner - auto-saves when employee ID is scanned
+   * Manual typing requires clicking Save button
    */
   function handleClockInKeydown(e) {
     if (e.key === 'Escape') {
@@ -1055,9 +1081,9 @@
       const suggestionsContainer = document.getElementById('clockInSuggestions');
       if (suggestionsContainer) suggestionsContainer.classList.remove('active');
       
-      // If employee already selected, save immediately
+      // If employee already selected, save immediately (user confirmed selection)
       if (selectedEmployee) {
-        console.log('[Clock In] Enter pressed, saving for:', selectedEmployee.fullName);
+        console.log('[Clock In] Enter pressed with selected employee, saving for:', selectedEmployee.fullName);
         saveClockRecord();
         return;
       }
@@ -1070,6 +1096,9 @@
         showNotification('Please enter an employee name or ID.', 'error');
         return;
       }
+      
+      // Check if this looks like barcode scanner input
+      const isBarcode = isBarcodeInput(searchValue);
       
       // Find matching employee - prioritize exact Employee ID match (normalized for barcode scanner)
       let match = allEmployees.find(emp => 
@@ -1095,9 +1124,15 @@
         selectedEmployee = match;
         e.target.value = match.fullName;
         updateSelectedEmployeeDisplay();
-        console.log('[Clock In] Employee matched via barcode/search, auto-saving for:', match.fullName);
-        // Auto-save immediately after finding match (perfect for barcode scanner workflow)
-        saveClockRecord();
+        
+        // Only auto-save if it's a barcode scan (fast input + ID format)
+        if (isBarcode) {
+          console.log('[Clock In] Barcode detected, auto-saving for:', match.fullName);
+          saveClockRecord();
+        } else {
+          console.log('[Clock In] Manual input detected, employee selected:', match.fullName, '- User must tap Save');
+          showNotification(`Selected: ${match.fullName}. Tap Save to confirm.`, 'info');
+        }
       } else {
         showNotification(`Employee not found: ${searchValue}`, 'error');
         clearClockModalFields();
